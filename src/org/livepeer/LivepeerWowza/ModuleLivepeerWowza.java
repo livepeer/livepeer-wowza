@@ -181,28 +181,36 @@ public class ModuleLivepeerWowza extends ModuleBase {
 					+ isAppend + " name:" + streamName);
 
 			try {
-				PushPublishRTMP publisher = new PushPublishRTMP();
-				publisher.addListener(new RTMPListener());
-
-				// Source stream
-				publisher.setAppInstance(_appInstance);
-//				publisher.setSrcStream(stream);
-				publisher.setSrcStreamName(streamName);
-//				publisher.setWaitOnMetadataAvailable(true);
-
-				// Destination stream
-				publisher.setHostname("35.232.200.158");
-				publisher.setPort(1935);
-				publisher.setDstApplicationName("stream");
-				publisher.setDstStreamName("eli");
-				publisher.setRemoveDefaultAppInstance(true);
-				synchronized(publishers)
-				{
-					publishers.put(stream, publisher);
-				}
-
-				publisher.connect();
-				getLogger().info("LIVEPEER connected");
+				PushPublishHTTPCupertinoLivepeerHandler http = new PushPublishHTTPCupertinoLivepeerHandler();
+				http.setAppInstance(_appInstance);
+				http.setSrcStreamName(streamName);
+				http.setDstStreamName(streamName);
+				
+				http.init(_appInstance, streamName, stream, new HashMap<String, String>(), new HashMap<String, String>(), null, true);
+//				http.load(new HashMap<String, String>());
+				http.connect();
+//				PushPublishRTMP publisher = new PushPublishRTMP();
+//				publisher.addListener(new RTMPListener());
+//
+//				// Source stream
+//				publisher.setAppInstance(_appInstance);
+////				publisher.setSrcStream(stream);
+//				publisher.setSrcStreamName(streamName);
+////				publisher.setWaitOnMetadataAvailable(true);
+//
+//				// Destination stream
+//				publisher.setHostname("35.232.200.158");
+//				publisher.setPort(1935);
+//				publisher.setDstApplicationName("stream");
+//				publisher.setDstStreamName("eli");
+//				publisher.setRemoveDefaultAppInstance(true);
+//				synchronized(publishers)
+//				{
+//					publishers.put(stream, publisher);
+//				}
+//
+//				publisher.connect();
+//				getLogger().info("LIVEPEER connected");
 			} catch (Exception e) {
 				getLogger().info("LIVEPEER RTMP: ", e);
 			}
