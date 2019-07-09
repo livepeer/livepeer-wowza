@@ -15,6 +15,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.UUID;
 
 import com.wowza.util.IPacketFragment;
 import com.wowza.util.PacketFragmentList;
@@ -51,8 +52,8 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 	private static final int DEFAULT_HTTP_PORT = 80;
 	private static final int DEFAULT_HTTPS_PORT = 443;
 	
-	String basePath = "/test";
-	String httpHost = "35.225.160.60";
+	String basePath = "live/";
+	String httpHost = "wowza-tester.default.svc.cluster.local";
 
 	boolean isSendSSL = false;
 
@@ -64,6 +65,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 	public PushPublishHTTPCupertinoLivepeerHandler() throws LicensingException
 	{
 		super();
+		basePath += UUID.randomUUID() + "/";
 	}
 
 	@Override
@@ -71,7 +73,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 	{
 		super.load(dataMap);
 
-		httpHost = "35.225.160.60";
+//		httpHost = "35.225.160.60";
 //		String httpHostStr = PushPublishUtils.removeMapString(dataMap, "http.host");
 //		if (!StringUtils.isEmpty(httpHostStr))
 //			httpHost = httpHostStr;
@@ -94,8 +96,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 //		{
 //			port = isSendSSL ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT;
 //		}
-		port = 80;
-
+		port = 7935;
 	}
 
 	@Override
@@ -204,6 +205,13 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 		retVal = writePlaylist(playlist, playlistPath);
 		return retVal;
 	}
+	
+	/**
+	 * Livepeer wants "0.ts" instead of "media_0.ts", so
+	 */
+	public String getSegmentUri(MediaSegmentModel mediaSegment) {
+		return mediaSegment.getUri().toString().replace("media_", "");
+	}
 
 	@Override
 	public int sendMediaSegment(MediaSegmentModel mediaSegment)
@@ -216,7 +224,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 			PacketFragmentList list = mediaSegment.getFragmentList();
 			if (list != null && list.size() != 0)
 			{
-				url = new URL((isSendSSL ? "https://" : "http://") + httpHost + getPortStr() + "/" + getDestinationPath() + "/" + mediaSegment.getUri());
+				url = new URL((isSendSSL ? "https://" : "http://") + httpHost + getPortStr() + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment));
 				conn = (HttpURLConnection)url.openConnection();
 				conn.setConnectTimeout(connectionTimeout);
 				conn.setReadTimeout(readTimeout);
@@ -265,7 +273,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 		OutputStream out = null;
 		try
 		{
-			url = new URL((isSendSSL ? "https://" : "http://") + httpHost + getPortStr() + "/" + getDestinationPath() + "/" + mediaSegment.getUri());
+			url = new URL((isSendSSL ? "https://" : "http://") + httpHost + getPortStr() + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment));
 			conn = (HttpURLConnection)url.openConnection();
 			conn.setConnectTimeout(connectionTimeout);
 			conn.setReadTimeout(readTimeout);
@@ -274,7 +282,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 			if (status >= 200 || status < 300)
 				retVal = 1;
 			else
-				logWarn("deleteMediaSegment", "Failed to delete media segment " + mediaSegment.getUri() + ", http status: " + status);
+				logWarn("deleteMediaSegment", "Failed to delete media segment " + getSegmentUri(mediaSegment) + ", http status: " + status);
 		}
 		catch (Exception e)
 		{
