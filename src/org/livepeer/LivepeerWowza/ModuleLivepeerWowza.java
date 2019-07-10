@@ -249,20 +249,23 @@ public class ModuleLivepeerWowza extends ModuleBase {
 	class TranscoderControl implements ILiveStreamTranscoderControl {
 		public boolean isLiveStreamTranscode(String transcoder, IMediaStream stream) {
 			// No transcoding, Livepeer is gonna take care of it
+			System.out.println("LIVEPEER TRANSCODER " + transcoder);
 			return false;
 		}
 	}
 
 	public void onAppStart(IApplicationInstance appInstance) {
 		_appInstance = appInstance;
-		System.out.println("onAppStart?");
-		getLogger().info("LIVEPEER onAppStart");
-		appInstance.
-		System.out.println("REGRET: " + appInstance.getTranscoderApplicationContext().getProfileDir());
-		System.out.println("REGRET: " + Arrays.deepToString(appInstance.getProperties().getAllAsStrings()));
+		System.out.println("LIVEPEER before control");
 		appInstance.setLiveStreamTranscoderControl(new TranscoderControl());
-		appInstance.getVHost().
-		System.out.println("LIVEPEER " + appInstance.getTranscoderProperties());
+		System.out.println("LIVEPEER after control");
+//		System.out.println("onAppStart?");
+//		getLogger().info("LIVEPEER onAppStart");
+//		appInstance.
+//		System.out.println("REGRET: " + appInstance.getTranscoderApplicationContext().getProfileDir());
+		System.out.println("REGRET: " + appInstance.getApplication().getApplicationPath());
+		
+//		System.out.println("LIVEPEER " + appInstance.getTranscoderProperties());
 	}
 
 	public void onStreamCreate(IMediaStream stream) {
