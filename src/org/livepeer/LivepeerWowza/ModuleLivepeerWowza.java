@@ -257,7 +257,11 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		_appInstance = appInstance;
 		System.out.println("onAppStart?");
 		getLogger().info("LIVEPEER onAppStart");
+		appInstance.
+		System.out.println("REGRET: " + appInstance.getTranscoderApplicationContext().getProfileDir());
+		System.out.println("REGRET: " + Arrays.deepToString(appInstance.getProperties().getAllAsStrings()));
 		appInstance.setLiveStreamTranscoderControl(new TranscoderControl());
+		appInstance.getVHost().
 		System.out.println("LIVEPEER " + appInstance.getTranscoderProperties());
 	}
 

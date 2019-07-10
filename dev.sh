@@ -7,7 +7,9 @@ set -e
 
 DEV_USER="$1"
 
-gsutil cp /Library/WowzaStreamingEngine/lib/LivepeerWowza.jar gs://livepeerjs-public/$DEV_USER/LivepeerWowza.jar
+cp /Library/WowzaStreamingEngine/lib/LivepeerWowza.jar ./LivepeerWowza.jar
+docker build -t iameli/livepeer-wowza:$DEV_USER .
+docker push iameli/livepeer-wowza:$DEV_USER
 kubectl delete pod -l app=$DEV_USER --wait
 until kubectl logs --tail=0 deployment/$DEV_USER; do
   echo "Waiting for pod to deploy..."
