@@ -2,15 +2,21 @@ package org.livepeer.LivepeerWowza;
 
 import com.wowza.wms.stream.*;
 import com.wowza.wms.stream.livetranscoder.*;
+import com.wowza.wms.transcoder.encoder.TranscoderEncoderStreamInfo;
 import com.wowza.wms.module.*;
 import com.wowza.wms.pushpublish.protocol.rtmp.IPushPublishRTMPNotify;
 import com.wowza.wms.pushpublish.protocol.rtmp.PushPublishRTMP;
 import com.wowza.wms.pushpublish.protocol.rtmp.PushPublishRTMPNetConnectionSession;
 import com.wowza.wms.request.RequestFunction;
+import com.wowza.wms.rest.WMSClientSecurity;
+import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
 
 import java.io.OutputStream;
 import java.util.*;
 
+import org.restlet.ext.jackson.JacksonRepresentation;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wowza.wms.amf.AMFDataList;
 import com.wowza.wms.amf.AMFPacket;
 import com.wowza.wms.application.*;
@@ -18,145 +24,6 @@ import com.wowza.wms.media.model.MediaCodecInfoAudio;
 import com.wowza.wms.media.model.MediaCodecInfoVideo;
 
 public class ModuleLivepeerWowza extends ModuleBase {
-	private IApplicationInstance _appInstance;
-	Map<IMediaStream, PushPublishRTMP> publishers = new HashMap<IMediaStream, PushPublishRTMP>();
-
-	class RTMPListener implements IPushPublishRTMPNotify {
-
-		@Override
-		public void onAkamaiClientLogin(PushPublishRTMPNetConnectionSession pushPublisherSession,
-				RequestFunction function, AMFDataList params) {
-			System.out.println("LIVEPEER onAkamaiClientLogin");
-
-		}
-
-		@Override
-		public void onAkamaiSetChallenge(PushPublishRTMPNetConnectionSession pushPublisherSession,
-				RequestFunction function, AMFDataList params) {
-			System.out.println("LIVEPEER onAkamaiSetChallenge");
-
-		}
-
-		@Override
-		public void onAkamaiSetOriginConnectionInfo(PushPublishRTMPNetConnectionSession pushPublisherSession,
-				RequestFunction function, AMFDataList params) {
-			System.out.println("LIVEPEER onAkamaiSetOriginConnectionInfo");
-
-		}
-
-		@Override
-		public void onConnect(PushPublishRTMPNetConnectionSession pushPublisherSession, RequestFunction function,
-				AMFDataList params) {
-			System.out.println("LIVEPEER onConnect");
-			System.out.println(pushPublisherSession.getStreamsToPublish());
-
-		}
-
-		@Override
-		public void onConnectFailure(PushPublishRTMPNetConnectionSession pushPublisherSession) {
-			System.out.println("LIVEPEER onConnectFailure");
-		}
-
-		@Override
-		public void onConnectStart(PushPublishRTMPNetConnectionSession pushPublisherSession) {
-			System.out.println("LIVEPEER onConnectStart");
-		}
-
-		@Override
-		public void onConnectSuccess(PushPublishRTMPNetConnectionSession pushPublisherSession) {
-			System.out.println("LIVEPEER onConnectSuccess");
-		}
-
-		@Override
-		public void onFCAnnounce(PushPublishRTMPNetConnectionSession pushPublisherSession, RequestFunction function,
-				AMFDataList params) {
-			System.out.println("LIVEPEER onFCAnnounce");
-
-		}
-
-		@Override
-		public void onFCPublish(PushPublishRTMPNetConnectionSession pushPublisherSession, RequestFunction function,
-				AMFDataList params) {
-			System.out.println("LIVEPEER onFCPublish");
-
-		}
-
-		@Override
-		public void onHandshakeResult(PushPublishRTMPNetConnectionSession pushPublisherSession,
-				RequestFunction function, AMFDataList params) {
-			System.out.println("LIVEPEER onHandshakeResult");
-
-		}
-
-		@Override
-		public void onPublishHandlerPlay(PushPublishRTMPNetConnectionSession pushPublisherSession, OutputStream out,
-				long[] playSizes) {
-			System.out.println("LIVEPEER onPublishHandlerPlay");
-
-		}
-
-		@Override
-		public void onPushPublisherSessionCreate(PushPublishRTMPNetConnectionSession pushPublisherSession) {
-			System.out.println("LIVEPEER onPushPublisherSessionCreate");
-		}
-
-		@Override
-		public void onPushPublisherSessionDestroy(PushPublishRTMPNetConnectionSession pushPublisherSession) {
-			System.out.println("LIVEPEER onPushPublisherSessionDestroy");
-		}
-
-		@Override
-		public void onReleaseStream(PushPublishRTMPNetConnectionSession pushPublisherSession, RequestFunction function,
-				AMFDataList params) {
-			System.out.println("LIVEPEER onReleaseStream");
-
-		}
-
-		@Override
-		public void onSessionClosed(PushPublishRTMPNetConnectionSession pushPublisherSession) {
-			System.out.println("LIVEPEER onSessionClosed");
-		}
-
-		@Override
-		public void onSessionIdle(PushPublishRTMPNetConnectionSession pushPublisherSession) {
-			System.out.println("LIVEPEER onSessionIdle");
-		}
-
-		@Override
-		public void onSessionOpened(PushPublishRTMPNetConnectionSession pushPublisherSession) {
-			System.out.println("LIVEPEER onSessionOpened");
-		}
-
-		@Override
-		public void onStreamCreate(PushPublishRTMPNetConnectionSession pushPublisherSession, RequestFunction function,
-				AMFDataList params) {
-			System.out.println("LIVEPEER onStreamCreate");
-		}
-
-		@Override
-		public void onStreamOnPlayStatus(PushPublishRTMPNetConnectionSession pushPublisherSession,
-				RequestFunction function, AMFDataList params) {
-			System.out.println("LIVEPEER onStreamOnPlayStatus");
-		}
-
-		@Override
-		public void onStreamOnStatus(PushPublishRTMPNetConnectionSession pushPublisherSession, RequestFunction function,
-				AMFDataList params) {
-			System.out.println("LIVEPEER onStreamOnStatus");
-		}
-
-		@Override
-		public void onValidateSession(PushPublishRTMPNetConnectionSession pushPublisherSession) {
-			System.out.println("LIVEPEER onValidateSession");
-		}
-
-		@Override
-		public void onValidateSessionResult(PushPublishRTMPNetConnectionSession pushPublisherSession, boolean result) {
-			System.out.println("LIVEPEER onValidateSessionResult");
-		}
-
-	}
-
 	class StreamListener implements IMediaStreamActionNotify3 {
 		public void onMetaData(IMediaStream stream, AMFPacket metaDataPacket) {
 			System.out.println("onMetaData[" + stream.getContextStr() + "]: " + metaDataPacket.toString());
@@ -179,14 +46,14 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		public void onPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
 			System.out.println("onPublish[" + stream.getContextStr() + "]: isRecord:" + isRecord + " isAppend:"
 					+ isAppend + " name:" + streamName);
-
 			try {
 				PushPublishHTTPCupertinoLivepeerHandler http = new PushPublishHTTPCupertinoLivepeerHandler();
 				http.setAppInstance(_appInstance);
 				http.setSrcStreamName(streamName);
 				http.setDstStreamName(streamName);
-				
-				http.init(_appInstance, streamName, stream, new HashMap<String, String>(), new HashMap<String, String>(), null, true);
+
+				http.init(_appInstance, streamName, stream, new HashMap<String, String>(),
+						new HashMap<String, String>(), null, true);
 //				http.load(new HashMap<String, String>());
 				http.connect();
 //				PushPublishRTMP publisher = new PushPublishRTMP();
@@ -227,8 +94,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		public void onUnPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
 			System.out.println("onUnPublish[" + stream.getContextStr() + "]: streamName:" + streamName + " isRecord:"
 					+ isRecord + " isAppend:" + isAppend);
-			synchronized(publishers)
-			{
+			synchronized (publishers) {
 				PushPublishRTMP publisher = publishers.remove(stream);
 				if (publisher != null)
 					publisher.disconnect();
@@ -246,25 +112,34 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		}
 	}
 
+	private IApplicationInstance _appInstance;
+	Map<IMediaStream, PushPublishRTMP> publishers = new HashMap<IMediaStream, PushPublishRTMP>();
+
 	class TranscoderControl implements ILiveStreamTranscoderControl {
 		public boolean isLiveStreamTranscode(String transcoder, IMediaStream stream) {
 			// No transcoding, Livepeer is gonna take care of it
+			TranscoderEncoderStreamInfo info = stream.getTranscoderEncoderStreamInfo();
 			System.out.println("LIVEPEER TRANSCODER " + transcoder);
 			return false;
 		}
 	}
 
 	public void onAppStart(IApplicationInstance appInstance) {
-		_appInstance = appInstance;
-		System.out.println("LIVEPEER before control");
-		appInstance.setLiveStreamTranscoderControl(new TranscoderControl());
-		System.out.println("LIVEPEER after control");
-//		System.out.println("onAppStart?");
-//		getLogger().info("LIVEPEER onAppStart");
-//		appInstance.
-//		System.out.println("REGRET: " + appInstance.getTranscoderApplicationContext().getProfileDir());
-		System.out.println("REGRET: " + appInstance.getApplication().getApplicationPath());
-		
+		System.out.println("REST attempt: ");
+		TranscoderAppConfig t = new TranscoderAppConfig("_defaultVHost_", "live");
+		System.out.println(t.loadObject());
+		System.out.println(t.getProfileDir());
+		System.out.println("REST done");
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+//			Staff staff = createStaff();
+			String json = mapper.writeValueAsString(t);
+			System.out.println(json);
+		} catch (Exception e) {
+			System.out.println("Exception in Jackson biz");
+			System.out.println(e);
+		}
+
 //		System.out.println("LIVEPEER " + appInstance.getTranscoderProperties());
 	}
 
