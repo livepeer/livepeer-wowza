@@ -14,6 +14,12 @@ import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
 import java.io.OutputStream;
 import java.util.*;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.restlet.ext.jackson.JacksonRepresentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,6 +53,9 @@ public class ModuleLivepeerWowza extends ModuleBase {
 			System.out.println("onPublish[" + stream.getContextStr() + "]: isRecord:" + isRecord + " isAppend:"
 					+ isAppend + " name:" + streamName);
 			try {
+				LivepeerAPI livepeer = new LivepeerAPI();
+				livepeer.pushTranscodeInformation("_defaultVHost_", "live");
+
 				PushPublishHTTPCupertinoLivepeerHandler http = new PushPublishHTTPCupertinoLivepeerHandler();
 				http.setAppInstance(_appInstance);
 				http.setSrcStreamName(streamName);
@@ -79,7 +88,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 //				publisher.connect();
 //				getLogger().info("LIVEPEER connected");
 			} catch (Exception e) {
-				getLogger().info("LIVEPEER RTMP: ", e);
+				getLogger().info("LIVEPEER HTTP: ", e);
 			}
 		}
 
@@ -125,20 +134,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 	}
 
 	public void onAppStart(IApplicationInstance appInstance) {
-		System.out.println("REST attempt: ");
-		TranscoderAppConfig t = new TranscoderAppConfig("_defaultVHost_", "live");
-		System.out.println(t.loadObject());
-		System.out.println(t.getProfileDir());
-		System.out.println("REST done");
-		try {
-			ObjectMapper mapper = new ObjectMapper();
-//			Staff staff = createStaff();
-			String json = mapper.writeValueAsString(t);
-			System.out.println(json);
-		} catch (Exception e) {
-			System.out.println("Exception in Jackson biz");
-			System.out.println(e);
-		}
+		System.out.println("livepeer booting up");
 
 //		System.out.println("LIVEPEER " + appInstance.getTranscoderProperties());
 	}
@@ -154,6 +150,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		synchronized (props) {
 			props.put("streamActionNotifier", actionNotify);
 		}
+
 		stream.addClientListener(actionNotify);
 		getLogger().info("LIVEPEER onStreamCreate[" + stream + "]: clientId:" + stream.getClientId());
 		getLogger().info("LIVEPEER onStreamCreate stream=" + stream.isPublisherStream());
