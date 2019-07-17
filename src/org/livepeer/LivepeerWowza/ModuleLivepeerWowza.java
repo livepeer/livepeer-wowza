@@ -50,13 +50,14 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		}
 
 		public void onPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
-			System.out.println("onPublish[" + stream.getContextStr() + "]: isRecord:" + isRecord + " isAppend:"
-					+ isAppend + " name:" + streamName);
 			try {
-				LivepeerAPI livepeer = new LivepeerAPI();
-				livepeer.pushTranscodeInformation("_defaultVHost_", "live");
+				System.out.println("LIVEPEER onPublish start");
+				LivepeerAPI livepeer = LivepeerAPI.getInstance();
+				String livepeerID = livepeer.pushTranscodeInformation("_defaultVHost_", "live");
+				System.out.println("Got LivepeerID="+livepeerID);
 
 				PushPublishHTTPCupertinoLivepeerHandler http = new PushPublishHTTPCupertinoLivepeerHandler();
+				System.out.println("LIVEPEER: " + _appInstance);
 				http.setAppInstance(_appInstance);
 				http.setSrcStreamName(streamName);
 				http.setDstStreamName(streamName);
@@ -65,6 +66,9 @@ public class ModuleLivepeerWowza extends ModuleBase {
 						new HashMap<String, String>(), null, true);
 //				http.load(new HashMap<String, String>());
 				http.connect();
+				
+				System.out.println("LIVEPEER onPublish end");
+
 //				PushPublishRTMP publisher = new PushPublishRTMP();
 //				publisher.addListener(new RTMPListener());
 //
@@ -88,7 +92,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 //				publisher.connect();
 //				getLogger().info("LIVEPEER connected");
 			} catch (Exception e) {
-				getLogger().info("LIVEPEER HTTP: ", e);
+				System.out.println("LIVEPEER HTTP: " + e);
 			}
 		}
 
@@ -103,11 +107,6 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		public void onUnPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
 			System.out.println("onUnPublish[" + stream.getContextStr() + "]: streamName:" + streamName + " isRecord:"
 					+ isRecord + " isAppend:" + isAppend);
-			synchronized (publishers) {
-				PushPublishRTMP publisher = publishers.remove(stream);
-				if (publisher != null)
-					publisher.disconnect();
-			}
 		}
 
 		public void onCodecInfoAudio(IMediaStream stream, MediaCodecInfoAudio codecInfoAudio) {
@@ -122,21 +121,19 @@ public class ModuleLivepeerWowza extends ModuleBase {
 	}
 
 	private IApplicationInstance _appInstance;
-	Map<IMediaStream, PushPublishRTMP> publishers = new HashMap<IMediaStream, PushPublishRTMP>();
 
 	class TranscoderControl implements ILiveStreamTranscoderControl {
 		public boolean isLiveStreamTranscode(String transcoder, IMediaStream stream) {
 			// No transcoding, Livepeer is gonna take care of it
-			TranscoderEncoderStreamInfo info = stream.getTranscoderEncoderStreamInfo();
-			System.out.println("LIVEPEER TRANSCODER " + transcoder);
 			return false;
 		}
 	}
 
 	public void onAppStart(IApplicationInstance appInstance) {
-		System.out.println("livepeer booting up");
-
-//		System.out.println("LIVEPEER " + appInstance.getTranscoderProperties());
+		System.out.println("LIVEPEER onAppStart");
+		_appInstance = appInstance;
+		appInstance.setLiveStreamTranscoderControl(new TranscoderControl());
+		
 	}
 
 	public void onStreamCreate(IMediaStream stream) {
@@ -144,6 +141,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 			getLogger().info("Ignoring local stream");
 			return;
 		}
+
 		IMediaStreamActionNotify2 actionNotify = new StreamListener();
 
 		WMSProperties props = stream.getProperties();
@@ -154,6 +152,5 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		stream.addClientListener(actionNotify);
 		getLogger().info("LIVEPEER onStreamCreate[" + stream + "]: clientId:" + stream.getClientId());
 		getLogger().info("LIVEPEER onStreamCreate stream=" + stream.isPublisherStream());
-
 	}
 }

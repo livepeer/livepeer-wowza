@@ -1,0 +1,743 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="EclipseModuleManager">
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-stream-live.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-xstream-1.4.7.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-stream-publish.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-stream-shoutcast.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/snmp4j-2.4.3.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-mediawriter-flv.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-tsstreaming.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/jackson-dataformat-smile-2.9.0.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-smoothstreaming.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-dvr.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/slf4j-api-1.6.4.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-core.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-stream-record.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-rest.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-cupertinostreaming.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/azure-storage-2.2.0.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-restlet-2.2.2.org.restlet.ext.simple.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-drm.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/log4j-1.2.17.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-pushpublish.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-mediawriter-h264.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-srt.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-mediawriter-webm.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/jackson-annotations-2.9.0.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/httpclient-4.5.3.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-mediareader-h264.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-mediareader-webm.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-stats.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/jackson-dataformat-csv-2.9.0.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-mediacache.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/jackson-dataformat-xml-2.9.0.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/slf4j-log4j12-1.6.4.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-ant.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-jax.validation.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-stream-rtp.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-mediareader-flv.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wowza-extras-log4j-1.2.17.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-mediareader-mp3.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-transcoder.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/jid3lib-0.5.4.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/joda-time-2.3.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-directstreaming.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-webmstreaming.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-release-tools.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-mediareader-smil.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-stream-file.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-mpegdashstreaming.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/jackson-dataformat-yaml-2.9.0.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-sourcecontrol.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-sanjosestreaming.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-jlayer.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/jackson-core-2.9.0.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-webrtc.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/snmp4j-agent-2.4.2.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/jackson-databind-2.9.0.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-bootstrap.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/commons-lang-2.6.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/httpcore-4.4.6.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/bcprov-jdk15on-159.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-restlet-2.2.2.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-license-rest.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-commons-modeler.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/commons-lang3-3.4.jar!/" />
+    <libelement value="jar:///Library/WowzaStreamingEngine/lib/wms-server.jar!/" />
+    <src_description expected_position="0">
+      <src_folder value="file://$MODULE_DIR$/src" expected_position="0" />
+    </src_description>
+  </component>
+  <component name="NewModuleRootManager">
+    <output url="file://$MODULE_DIR$/bin" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+    </content>
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="module-library">
+      <library name="wms-stream-live.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-stream-live.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-xstream-1.4.7.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-xstream-1.4.7.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-stream-publish.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-stream-publish.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-stream-shoutcast.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-stream-shoutcast.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="snmp4j-2.4.3.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/snmp4j-2.4.3.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-mediawriter-flv.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-mediawriter-flv.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-httpstreamer-tsstreaming.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-tsstreaming.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="jackson-dataformat-smile-2.9.0.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/jackson-dataformat-smile-2.9.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-httpstreamer-smoothstreaming.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-smoothstreaming.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-dvr.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-dvr.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="slf4j-api-1.6.4.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/slf4j-api-1.6.4.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-core.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-core.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-stream-record.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-stream-record.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-rest.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-rest.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-httpstreamer-cupertinostreaming.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-cupertinostreaming.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="azure-storage-2.2.0.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/azure-storage-2.2.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-restlet-2.2.2.org.restlet.ext.simple.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-restlet-2.2.2.org.restlet.ext.simple.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-drm.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-drm.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="log4j-1.2.17.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/log4j-1.2.17.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-pushpublish.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-pushpublish.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-mediawriter-h264.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-mediawriter-h264.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-srt.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-srt.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-mediawriter-webm.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-mediawriter-webm.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="jackson-annotations-2.9.0.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/jackson-annotations-2.9.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="httpclient-4.5.3.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/httpclient-4.5.3.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-mediareader-h264.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-mediareader-h264.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-mediareader-webm.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-mediareader-webm.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-stats.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-stats.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="jackson-dataformat-csv-2.9.0.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/jackson-dataformat-csv-2.9.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-mediacache.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-mediacache.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="jackson-dataformat-xml-2.9.0.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/jackson-dataformat-xml-2.9.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="slf4j-log4j12-1.6.4.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/slf4j-log4j12-1.6.4.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-ant.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-ant.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-jax.validation.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-jax.validation.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-stream-rtp.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-stream-rtp.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-mediareader-flv.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-mediareader-flv.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wowza-extras-log4j-1.2.17.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wowza-extras-log4j-1.2.17.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-mediareader-mp3.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-mediareader-mp3.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-transcoder.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-transcoder.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="jid3lib-0.5.4.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/jid3lib-0.5.4.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="joda-time-2.3.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/joda-time-2.3.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-httpstreamer-directstreaming.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-directstreaming.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-httpstreamer-webmstreaming.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-webmstreaming.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-release-tools.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-release-tools.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-mediareader-smil.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-mediareader-smil.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-stream-file.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-stream-file.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-httpstreamer-mpegdashstreaming.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-mpegdashstreaming.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="jackson-dataformat-yaml-2.9.0.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/jackson-dataformat-yaml-2.9.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-sourcecontrol.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-sourcecontrol.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-httpstreamer-sanjosestreaming.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-httpstreamer-sanjosestreaming.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-jlayer.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-jlayer.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="jackson-core-2.9.0.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/jackson-core-2.9.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-webrtc.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-webrtc.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="snmp4j-agent-2.4.2.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/snmp4j-agent-2.4.2.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="jackson-databind-2.9.0.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/jackson-databind-2.9.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-bootstrap.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-bootstrap.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="commons-lang-2.6.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/commons-lang-2.6.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="httpcore-4.4.6.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/httpcore-4.4.6.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="bcprov-jdk15on-159.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/bcprov-jdk15on-159.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-restlet-2.2.2.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-restlet-2.2.2.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-license-rest.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-license-rest.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-commons-modeler.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-commons-modeler.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="commons-lang3-3.4.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/commons-lang3-3.4.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="wms-server.jar">
+        <CLASSES>
+          <root url="jar:///Library/WowzaStreamingEngine/lib/wms-server.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:///Library/WowzaStreamingEngine/documentation/serverapi" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+  </component>
+</module>

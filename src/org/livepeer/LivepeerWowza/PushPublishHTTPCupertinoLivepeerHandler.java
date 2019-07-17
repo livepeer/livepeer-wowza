@@ -65,12 +65,14 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 	public PushPublishHTTPCupertinoLivepeerHandler() throws LicensingException
 	{
 		super();
+		System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
 		basePath += UUID.randomUUID() + "/";
 	}
 
 	@Override
 	public void load(HashMap<String, String> dataMap)
 	{
+		System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler load " + dataMap);
 		super.load(dataMap);
 
 //		httpHost = "35.225.160.60";

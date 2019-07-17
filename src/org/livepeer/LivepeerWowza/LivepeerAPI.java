@@ -23,11 +23,41 @@ import com.wowza.wms.rest.vhosts.transcoder.TranscoderTemplatesConfig;
 public class LivepeerAPI {
 	
 	@JsonAutoDetect(fieldVisibility = Visibility.ANY)
-	public class TranscoderInformation {
+	public static class TranscoderInformation {
+		private String id;
 		private TranscoderAppConfig transcoderAppConfig;
 		private Map<String, TranscoderTemplateAppConfig> transcoderTemplateAppConfig;
 		
+		public String getId() {
+			return id;
+		}
+		
+		public void setId(String _id) {
+			id = _id;
+		}
+		
+		public TranscoderAppConfig getTranscoderAppConfig() {
+			return transcoderAppConfig;
+		}
+		
+		public void setTranscoderAppConfig(TranscoderAppConfig tac) {
+			transcoderAppConfig = tac;
+		}
+		
+		public Map<String, TranscoderTemplateAppConfig> getTranscoderTemplateAppConfig() {
+			return transcoderTemplateAppConfig;
+		}
+		
+		public void setTranscoderTemplateAppConfig(Map<String, TranscoderTemplateAppConfig> ttac) {
+			transcoderTemplateAppConfig = ttac;
+		}
+		
+		public TranscoderInformation() {
+			
+		}
+		
 		public TranscoderInformation(String vhost, String application) {
+			id = null;
 			transcoderAppConfig = new TranscoderAppConfig(vhost, application);
 			transcoderAppConfig.loadObject();
 			transcoderTemplateAppConfig = new HashMap<>();
@@ -36,6 +66,8 @@ public class LivepeerAPI {
 				ttac.loadObject();
 				transcoderTemplateAppConfig.put(t.getId(), ttac);
 			}
+			ObjectMapper mapper = new ObjectMapper();
+
 		}
 	}
 
@@ -54,21 +86,20 @@ public class LivepeerAPI {
 		httpClient = HttpClients.createDefault();
 	}
 	
-	public void pushTranscodeInformation(String vhost, String application) throws ClientProtocolException, IOException {
+	public String pushTranscodeInformation(String vhost, String application) throws ClientProtocolException, IOException {
 		TranscoderInformation body = new TranscoderInformation(vhost, application);
-		
-		
 
+		
 		ObjectMapper mapper = new ObjectMapper();
-//			Staff staff = createStaff();
 		String json = mapper.writeValueAsString(body);
-		System.out.println(json);
 		StringEntity requestEntity = new StringEntity(json, ContentType.APPLICATION_JSON);
 
-		HttpPost postMethod = new HttpPost("https://3ff2c6e8.ngrok.io/api/wowza");
+		HttpPost postMethod = new HttpPost("https://05cbc366.ngrok.io/api/wowza");
 		postMethod.setEntity(requestEntity);
 
 		HttpResponse rawResponse = httpClient.execute(postMethod);
-		System.out.println(rawResponse.getStatusLine());
+		TranscoderInformation info = mapper.readValue(rawResponse.getEntity().getContent(), TranscoderInformation.class);
+		return info.getId();
+
 	}
 }
