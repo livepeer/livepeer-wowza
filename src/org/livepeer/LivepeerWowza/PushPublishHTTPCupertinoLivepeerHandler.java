@@ -53,18 +53,17 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 	private static final int DEFAULT_HTTPS_PORT = 443;
 	
 	String basePath = "live/";
-	String httpHost = "wowza-tester.default.svc.cluster.local";
-
-	boolean isSendSSL = false;
+	String httpAddress;
 
 	boolean backup = false;
 	String groupName = null;
 	private int connectionTimeout = 5000;
 	private int readTimeout = 5000;
 
-	public PushPublishHTTPCupertinoLivepeerHandler() throws LicensingException
+	public PushPublishHTTPCupertinoLivepeerHandler(String broadcaster) throws LicensingException
 	{
 		super();
+		httpAddress = broadcaster;
 		System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
 		basePath += UUID.randomUUID() + "/";
 	}
@@ -226,7 +225,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 			PacketFragmentList list = mediaSegment.getFragmentList();
 			if (list != null && list.size() != 0)
 			{
-				url = new URL((isSendSSL ? "https://" : "http://") + httpHost + getPortStr() + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment));
+				url = new URL(httpAddress + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment));
 				conn = (HttpURLConnection)url.openConnection();
 				conn.setConnectTimeout(connectionTimeout);
 				conn.setReadTimeout(readTimeout);
@@ -275,7 +274,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 		OutputStream out = null;
 		try
 		{
-			url = new URL((isSendSSL ? "https://" : "http://") + httpHost + getPortStr() + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment));
+			url = new URL(httpAddress + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment));
 			conn = (HttpURLConnection)url.openConnection();
 			conn.setConnectTimeout(connectionTimeout);
 			conn.setReadTimeout(readTimeout);
@@ -339,7 +338,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 	@Override
 	public String getDestionationLogData()
 	{
-		return "{\"" + (isSendSSL ? "https://" : "http://") + httpHost + getPortStr() + "/" + getDestinationPath() + "\"}";
+		return "{\"" + httpAddress + "/" + getDestinationPath() + "\"}";
 	}
 
 	private int writePlaylist(PlaylistModel playlist, String playlistPath)
@@ -349,7 +348,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 		HttpURLConnection conn = null;
 		try
 		{
-			url = new URL((isSendSSL ? "https://" : "http://") + httpHost + getPortStr() + "/" + playlistPath);
+			url = new URL(httpAddress + "/" + playlistPath);
 			conn = (HttpURLConnection)url.openConnection();
 			conn.setConnectTimeout(connectionTimeout);
 			conn.setReadTimeout(readTimeout);
@@ -397,11 +396,4 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 		return basePath + getDstStreamName() + "-b";
 	}
 
-	private String getPortStr()
-	{
-		String portStr = "";
-		if(port != DEFAULT_HTTP_PORT && port != DEFAULT_HTTPS_PORT)
-			portStr = ":" + port;
-		return portStr;
-	}
 }

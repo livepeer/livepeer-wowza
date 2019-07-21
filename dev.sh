@@ -7,7 +7,6 @@ set -e
 
 DEV_USER="$1"
 
-cp /Library/WowzaStreamingEngine/lib/LivepeerWowza.jar ./LivepeerWowza.jar
 docker build -t iameli/livepeer-wowza:$DEV_USER .
 docker push iameli/livepeer-wowza:$DEV_USER
 kubectl delete pod -l app=$DEV_USER --wait

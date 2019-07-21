@@ -32,7 +32,7 @@
 			<StorageDir>${com.wowza.wms.context.VHostConfigHome}/content</StorageDir>
 			<KeyDir>${com.wowza.wms.context.VHostConfigHome}/keys</KeyDir>
 			<!-- LiveStreamPacketizers (separate with commas): cupertinostreamingpacketizer, smoothstreamingpacketizer, sanjosestreamingpacketizer, mpegdashstreamingpacketizer, cupertinostreamingrepeater, smoothstreamingrepeater, sanjosestreamingrepeater, mpegdashstreamingrepeater -->
-			<LiveStreamPacketizers>cupertinostreamingpacketizer,smoothstreamingpacketizer,sanjosestreamingpacketizer,mpegdashstreamingpacketizer</LiveStreamPacketizers>
+			<LiveStreamPacketizers>cupertinostreamingpacketizer,sanjosestreamingpacketizer,mpegdashstreamingpacketizer</LiveStreamPacketizers>
 			<!-- Properties defined here will override any properties defined in conf/Streams.xml for any streams types loaded by this application -->
 			<Properties>
 			</Properties>
@@ -75,7 +75,7 @@
 			</Properties>
 		</TimedText>
 		<!-- HTTPStreamers (separate with commas): cupertinostreaming, smoothstreaming, sanjosestreaming, mpegdashstreaming, dvrchunkstreaming -->
-		<HTTPStreamers>cupertinostreaming,smoothstreaming,sanjosestreaming,mpegdashstreaming</HTTPStreamers>
+		<HTTPStreamers>cupertinostreaming,sanjosestreaming,mpegdashstreaming</HTTPStreamers>
 		<MediaCache>
 			<MediaCacheSourceList></MediaCacheSourceList>
 		</MediaCache>

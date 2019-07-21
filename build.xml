@@ -1,14 +1,18 @@
 <?xml version="1.0"?>
-<project name="LivepeerWowza" default="jar" basedir="..">
-	
+<project name="LivepeerWowza" default="jar" basedir=".">
+
 	<property name="wowza.lib.dir" value="/Library/WowzaStreamingEngine/lib"/>
 	<property name="jar.filename" value="LivepeerWowza.jar"/>
 	<property name="core.build.dir" value="bin"/>
 
 	<target name="jar">
-		<jar jarfile="${wowza.lib.dir}/${jar.filename}">
-			<fileset dir="${core.build.dir}"/>
+		<mkdir dir="bin/classes"/>
+		<javac srcdir="src" destdir="bin/classes" />
+		<jar basedir="bin/classes" jarfile="${wowza.lib.dir}/${jar.filename}">
+			<manifest>
+				<attribute name="Main-Class" value="org.livepeer.LivepeerWowza.ModuleLivepeerWowza"/>
+			</manifest>
 		</jar>
 	</target>
-	
+
 </project>

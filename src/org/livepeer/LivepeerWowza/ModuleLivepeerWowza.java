@@ -52,12 +52,15 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		public void onPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
 			try {
 				System.out.println("LIVEPEER onPublish start");
-				LivepeerAPI livepeer = LivepeerAPI.getInstance();
-				String livepeerID = livepeer.pushTranscodeInformation("_defaultVHost_", "live");
+				String livepeerID = livepeer.createWowzaFromApplication("_defaultVHost_", "live").getId();
 				System.out.println("Got LivepeerID="+livepeerID);
+				List<LivepeerAPI.LivepeerAPIResourceBroadcaster> broadcasters = livepeer.getBroadcasters();
+				Random rand = new Random();
+				LivepeerAPI.LivepeerAPIResourceBroadcaster broadcaster = broadcasters.get(rand.nextInt(broadcasters.size()));
 
-				PushPublishHTTPCupertinoLivepeerHandler http = new PushPublishHTTPCupertinoLivepeerHandler();
-				System.out.println("LIVEPEER: " + _appInstance);
+				System.out.println("LIVEPEER: picked broadcaster " + broadcaster.getAddress());
+				PushPublishHTTPCupertinoLivepeerHandler http = new PushPublishHTTPCupertinoLivepeerHandler(broadcaster.getAddress());
+
 				http.setAppInstance(_appInstance);
 				http.setSrcStreamName(streamName);
 				http.setDstStreamName(streamName);
@@ -121,6 +124,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 	}
 
 	private IApplicationInstance _appInstance;
+	private LivepeerAPI livepeer;
 
 	class TranscoderControl implements ILiveStreamTranscoderControl {
 		public boolean isLiveStreamTranscode(String transcoder, IMediaStream stream) {
@@ -132,6 +136,8 @@ public class ModuleLivepeerWowza extends ModuleBase {
 	public void onAppStart(IApplicationInstance appInstance) {
 		System.out.println("LIVEPEER onAppStart");
 		_appInstance = appInstance;
+		livepeer = new LivepeerAPI();
+		livepeer.setLogger(getLogger());
 		appInstance.setLiveStreamTranscoderControl(new TranscoderControl());
 		
 	}
