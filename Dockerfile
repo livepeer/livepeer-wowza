@@ -7,7 +7,6 @@ RUN curl -o ant.tar.gz https://apache.org/dist/ant/binaries/apache-ant-1.10.6-bi
 WORKDIR /build/wowza
 RUN mkdir /build/bin
 ADD build.xml build.xml
-ADD cert cert
 ENV PATH $PATH:/usr/local/WowzaStreamingEngine/jre/bin
 ADD build-trust-store.sh build-trust-store.sh
 RUN ./build-trust-store.sh /usr/local/WowzaStreamingEngine/jre
