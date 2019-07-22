@@ -61,6 +61,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 				System.out.println("LIVEPEER: picked broadcaster " + broadcaster.getAddress());
 				PushPublishHTTPCupertinoLivepeerHandler http = new PushPublishHTTPCupertinoLivepeerHandler(broadcaster.getAddress());
 
+				http.setHttpClient(livepeer.getHttpClient());
 				http.setAppInstance(_appInstance);
 				http.setSrcStreamName(streamName);
 				http.setDstStreamName(streamName);
@@ -159,4 +160,5 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		getLogger().info("LIVEPEER onStreamCreate[" + stream + "]: clientId:" + stream.getClientId());
 		getLogger().info("LIVEPEER onStreamCreate stream=" + stream.isPublisherStream());
 	}
+
 }

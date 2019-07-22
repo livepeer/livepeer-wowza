@@ -5,9 +5,7 @@ package org.livepeer.LivepeerWowza;
  */
 
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -26,9 +24,66 @@ import com.wowza.wms.manifest.writer.m3u8.PlaylistWriter;
 import com.wowza.wms.pushpublish.protocol.cupertino.PushPublishHTTPCupertino;
 import com.wowza.wms.server.LicensingException;
 import com.wowza.wms.util.PushPublishUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.AbstractHttpEntity;
+import org.apache.http.entity.BasicHttpEntity;
 
 public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupertino
 {
+
+	public class LivepeerSegmentEntity extends AbstractHttpEntity {
+
+			int size = 0;
+			PacketFragmentList list;
+
+			LivepeerSegmentEntity(PacketFragmentList _list) {
+				this.list = _list;
+			}
+
+
+			public boolean isRepeatable() {
+				return false;
+			}
+
+			public long getContentLength() {
+				return -1;
+			}
+
+			public boolean isStreaming() {
+				return false;
+			}
+
+			public int getSize() {
+				return size;
+			}
+
+			public InputStream getContent() throws IOException {
+				// Should be implemented as well but is irrelevant for this case
+				throw new UnsupportedOperationException();
+			}
+
+			public void writeTo(final OutputStream outstream) throws IOException {
+				DataOutputStream writer = new DataOutputStream(outstream);
+
+				Iterator<IPacketFragment> itr = list.getFragments().iterator();
+				while (itr.hasNext())
+				{
+					IPacketFragment fragment = itr.next();
+					if (fragment.getLen() <= 0)
+						continue;
+					byte[] data = fragment.getBuffer();
+					size += data.length;
+					writer.write(data);
+				}
+
+				writer.flush();
+			}
+
+
+	}
+
 
 	/*
 	 * Directory layout is as follow:
@@ -54,6 +109,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 	
 	String basePath = "live/";
 	String httpAddress;
+	HttpClient httpClient;
 
 	boolean backup = false;
 	String groupName = null;
@@ -66,6 +122,10 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 		httpAddress = broadcaster;
 		System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
 		basePath += UUID.randomUUID() + "/";
+	}
+
+	public void setHttpClient(HttpClient client) {
+		httpClient = client;
 	}
 
 	@Override
@@ -217,33 +277,21 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 	@Override
 	public int sendMediaSegment(MediaSegmentModel mediaSegment)
 	{
+		String url = null;
 		int size = 0;
-		URL url = null;
-		HttpURLConnection conn = null;
 		try
 		{
 			PacketFragmentList list = mediaSegment.getFragmentList();
 			if (list != null && list.size() != 0)
 			{
-				url = new URL(httpAddress + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment));
-				conn = (HttpURLConnection)url.openConnection();
-				conn.setConnectTimeout(connectionTimeout);
-				conn.setReadTimeout(readTimeout);
-				conn.setRequestMethod("PUT");
-				conn.setDoOutput(true);
+				url = httpAddress + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment);
+				LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
+				HttpPut req = new HttpPut(url);
+				req.setEntity(entity);
+				HttpResponse res = httpClient.execute(req);
 
-				Iterator<IPacketFragment> itr = list.getFragments().iterator();
-				while (itr.hasNext())
-				{
-					IPacketFragment fragment = itr.next();
-					if (fragment.getLen() <= 0)
-						continue;
-					byte[] data = fragment.getBuffer();
-
-					conn.getOutputStream().write(data);
-					size += data.length;
-				}
-				int status = conn.getResponseCode();
+				int status = res.getStatusLine().getStatusCode();
+				size = entity.getSize();
 				if (status < 200 || status >= 300)
 					size = 0;
 			}
@@ -254,13 +302,6 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 		{
 			logError("sendMediaSegment", "Failed to send media segment data to " + url.toString(), e);
 			size = 0;
-		}
-		finally
-		{
-			if (conn != null)
-			{
-				conn.disconnect();
-			}
 		}
 		return size;
 	}

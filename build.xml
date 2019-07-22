@@ -12,6 +12,7 @@
 			<manifest>
 				<attribute name="Main-Class" value="org.livepeer.LivepeerWowza.ModuleLivepeerWowza"/>
 			</manifest>
+			<fileset file="livepeer_cacerts" />
 		</jar>
 	</target>
 
