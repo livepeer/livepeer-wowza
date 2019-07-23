@@ -141,7 +141,7 @@ public class LivepeerAPI {
                 SSLConnectionSocketFactory.getDefaultHostnameVerifier());
         httpClient = HttpClients.custom()
                 .setSSLSocketFactory(sslsf)
-                .setUserAgent("LivepeerWowza/0.0.1")
+                .setUserAgent("LivepeerWowza/0.0.2")
                 .build();
         mapper = new ObjectMapper();
     }
