@@ -1,0 +1,15 @@
+jobs:
+  - job: build_livepeer
+
+    pool:
+      vmImage: "ubuntu:18.04"
+
+    # variables:
+    #   DOCKER_CLI_EXPERIMENTAL: enabled
+
+    steps:
+      - checkout: self
+      - bash: |-
+          docker build -t livepeer-wowza .
+          docker create --name livepeer-wowza livepeer-wowza
+          docker cp livepeer-wowza:/usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar ./LivepeerWowza.jar
