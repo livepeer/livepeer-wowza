@@ -16,4 +16,7 @@ jobs:
           docker create --name livepeer-wowza livepeer-wowza /bin/bash
           docker cp livepeer-wowza:/usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar ./LivepeerWowza.jar
           export BRANCH=$(Build.SourceBranchName)
+          export GCLOUD_KEY="$GCLOUD_KEY"
+          export GCLOUD_SECRET="$GCLOUD_SECRET"
+          export DISCORD_URL="$DISCORD_URL"
           ./hack/upload-build.sh
