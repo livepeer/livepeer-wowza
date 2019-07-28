@@ -11,6 +11,8 @@ jobs:
       - checkout: self
       - bash: |-
           set -e
+          set -x
+          docker build -t iameli/livepeer-wowza:$DEV_USER --build-arg=version=$(git describe --always --tags --dirty) .
           docker build -t livepeer-wowza .
           docker create --name livepeer-wowza livepeer-wowza /bin/bash
           docker cp livepeer-wowza:/usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar ./LivepeerWowza.jar
