@@ -6,435 +6,288 @@ package org.livepeer.LivepeerWowza;
 
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.UUID;
 
 import com.wowza.util.IPacketFragment;
 import com.wowza.util.PacketFragmentList;
-import com.wowza.util.StringUtils;
 import com.wowza.wms.manifest.model.m3u8.MediaSegmentModel;
 import com.wowza.wms.manifest.model.m3u8.PlaylistModel;
-import com.wowza.wms.manifest.writer.m3u8.PlaylistWriter;
 import com.wowza.wms.pushpublish.protocol.cupertino.PushPublishHTTPCupertino;
 import com.wowza.wms.server.LicensingException;
-import com.wowza.wms.util.PushPublishUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.AbstractHttpEntity;
-import org.apache.http.entity.BasicHttpEntity;
 
-public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupertino
-{
+public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupertino {
 
-	public class LivepeerSegmentEntity extends AbstractHttpEntity {
+  /**
+   * Livepeer segments as an HttpEntity suitable for PUTing with Apache HttpClient
+   */
+  public class LivepeerSegmentEntity extends AbstractHttpEntity {
 
-			int size = 0;
-			PacketFragmentList list;
+    int size = 0;
+    PacketFragmentList list;
 
-			LivepeerSegmentEntity(PacketFragmentList _list) {
-				this.list = _list;
-			}
-
-
-			public boolean isRepeatable() {
-				return false;
-			}
-
-			public long getContentLength() {
-				return -1;
-			}
-
-			public boolean isStreaming() {
-				return false;
-			}
-
-			public int getSize() {
-				return size;
-			}
-
-			public InputStream getContent() throws IOException {
-				// Should be implemented as well but is irrelevant for this case
-				throw new UnsupportedOperationException();
-			}
-
-			public void writeTo(final OutputStream outstream) throws IOException {
-				DataOutputStream writer = new DataOutputStream(outstream);
-
-				Iterator<IPacketFragment> itr = list.getFragments().iterator();
-				while (itr.hasNext())
-				{
-					IPacketFragment fragment = itr.next();
-					if (fragment.getLen() <= 0)
-						continue;
-					byte[] data = fragment.getBuffer();
-					size += data.length;
-					writer.write(data);
-				}
-
-				writer.flush();
-			}
+    LivepeerSegmentEntity(PacketFragmentList _list) {
+      this.list = _list;
+    }
 
 
-	}
+    public boolean isRepeatable() {
+      return false;
+    }
+
+    public long getContentLength() {
+      return -1;
+    }
+
+    public boolean isStreaming() {
+      return false;
+    }
+
+    public int getSize() {
+      return size;
+    }
+
+    public InputStream getContent() throws IOException {
+      // Should be implemented as well but is irrelevant for this case
+      throw new UnsupportedOperationException();
+    }
+
+    public void writeTo(final OutputStream outstream) throws IOException {
+      DataOutputStream writer = new DataOutputStream(outstream);
+
+      Iterator<IPacketFragment> itr = list.getFragments().iterator();
+      while (itr.hasNext()) {
+        IPacketFragment fragment = itr.next();
+        if (fragment.getLen() <= 0)
+          continue;
+        byte[] data = fragment.getBuffer();
+        size += data.length;
+        writer.write(data);
+      }
+
+      writer.flush();
+    }
 
 
-	/*
-	 * Directory layout is as follow:
-	 * <basePath> is the http.path directory in the map file
-	 * <dstStreamName> is gotten from the base implementation
-	 * <sessionId> is gotten from the base implementation, this is here in case the incoming stream comes and goes, we don't overwrite media segments
-	 *
-	 *
-	 * /<basePath>/<dstStreamName>/playlist.m3u8 (master playlist)
-	 * /<basePath>/<dstStreamName>/chunklist.m3u8 (media playlist)
-	 * /<basePath>/<groupName>/playlist.m3u8 (group master playlist)
-	 * /<basePath>/<dstStreamName>/<sessionId>/media_x.ts (media segments)
-	 *
-	 * We reference the media playlists and the media segements using a preceeding "../" such that when the group master playlist references the different
-	 * media playlists that represent renditions, it can pick them up from different implementations without modification.
-	 *
-	 * If this is sending to a backup server, the <dstStreamName> has "-b" appended to the end
-	 *
-	 */
+  }
 
-	private static final int DEFAULT_HTTP_PORT = 80;
-	private static final int DEFAULT_HTTPS_PORT = 443;
-	
-	String basePath = "live/";
-	String httpAddress;
-	HttpClient httpClient;
+  protected String basePath = "live/";
+  protected String httpAddress;
+  protected HttpClient httpClient;
 
-	boolean backup = false;
-	String groupName = null;
-	private int connectionTimeout = 5000;
-	private int readTimeout = 5000;
+  boolean backup = false;
+  String groupName = null;
+  private int connectionTimeout = 5000;
+  private int readTimeout = 5000;
 
-	public PushPublishHTTPCupertinoLivepeerHandler(String broadcaster) throws LicensingException
-	{
-		super();
-		httpAddress = broadcaster;
-		System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
-		basePath += UUID.randomUUID() + "/";
-	}
+  public PushPublishHTTPCupertinoLivepeerHandler(String broadcaster) throws LicensingException {
+    super();
+    httpAddress = broadcaster;
+    System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
+    basePath += UUID.randomUUID() + "/";
+  }
 
-	public void setHttpClient(HttpClient client) {
-		httpClient = client;
-	}
+  public void setHttpClient(HttpClient client) {
+    httpClient = client;
+  }
 
-	@Override
-	public void load(HashMap<String, String> dataMap)
-	{
-		System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler load " + dataMap);
-		super.load(dataMap);
+  @Override
+  public void load(HashMap<String, String> dataMap) {
+    System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler load " + dataMap);
+    super.load(dataMap);
+  }
 
-//		httpHost = "35.225.160.60";
-//		String httpHostStr = PushPublishUtils.removeMapString(dataMap, "http.host");
-//		if (!StringUtils.isEmpty(httpHostStr))
-//			httpHost = httpHostStr;
+  /**
+   * No-op in the context of Livepeer. We get all necessary data from the segments themselves.
+   *
+   * @param groupName      not used
+   * @param masterPlaylist not used
+   * @return true
+   */
+  @Override
+  public boolean updateGroupMasterPlaylistPlaybackURI(String groupName, PlaylistModel masterPlaylist) {
+    return true;
+  }
 
-//		String basePathStr = PushPublishUtils.removeMapString(dataMap, "http.path");
-//		if (!StringUtils.isEmpty(basePathStr))
-//			basePath = basePathStr;
-//		if (!basePath.endsWith("/"))
-//			basePath += "/";
+  /**
+   * No-op in the context of Livepeer.
+   *
+   * @param playlist not used
+   * @return true
+   */
+  @Override
+  public boolean updateMasterPlaylistPlaybackURI(PlaylistModel playlist) {
+    return true;
+  }
 
-//		String sendSSLStr = PushPublishUtils.removeMapString(dataMap, "sendSSL");
-//		if (sendSSLStr != null)
-//		{
-//			sendSSLStr = sendSSLStr.toLowerCase(Locale.ENGLISH);
-//			isSendSSL = sendSSLStr.startsWith("t") || sendSSLStr.startsWith("y");
-//		}
-		
-		// set default http(s) port if it hasn't been changed from the default rtmp port.
-//		if(port == 1935)
-//		{
-//			port = isSendSSL ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT;
-//		}
-		port = 7935;
-	}
+  /**
+   * No-op in the context of Livepeer.
+   *
+   * @param playlist not used
+   * @return true
+   */
+  @Override
+  public boolean updateMediaPlaylistPlaybackURI(PlaylistModel playlist) {
+    return true;
+  }
 
-	@Override
-	public boolean updateGroupMasterPlaylistPlaybackURI(String groupName, PlaylistModel masterPlaylist)
-	{
-		boolean retVal = true;
-		String newPath = "../" + groupName + "/" + masterPlaylist.getUri().getPath();
-		try
-		{
-			masterPlaylist.setUri(new URI(newPath));
-			this.groupName = groupName;
-		}
-		catch (Exception e)
-		{
-			logError("updateGroupMasterPlaylistPlaybackURI", "Invalid path " + newPath, e);
-			retVal = false;
-		}
-		return retVal;
-	}
+  /**
+   * No-op in the context of Livepeer.
+   *
+   * @param mediaSegment not used
+   * @return true
+   */
+  @Override
+  public boolean updateMediaSegmentPlaybackURI(MediaSegmentModel mediaSegment) {
+    return true;
+  }
 
-	@Override
-	public boolean updateMasterPlaylistPlaybackURI(PlaylistModel playlist)
-	{
-		boolean retVal = true;
+  /**
+   * No-op in the context of Livepeer.
+   *
+   * @param groupName not used
+   * @param playlist  not used
+   * @return 0
+   */
+  @Override
+  public int sendGroupMasterPlaylist(String groupName, PlaylistModel playlist) {
+    return 0;
+  }
 
-		String path = "../" + getDstStreamName() + (backup ? "-b/" : "/") + playlist.getUri().toString();
-		try
-		{
-			playlist.setUri(new URI(path));
-		}
-		catch (URISyntaxException e)
-		{
-			logError("updateMasterPlaylistPlaybackURI", "Failed to update master playlist to " + path);
-			retVal = false;
-		}
-		return retVal;
-	}
+  /**
+   * No-op in the context of Livepeer.
+   *
+   * @param playlist not used
+   * @return 0
+   */
+  @Override
+  public int sendMasterPlaylist(PlaylistModel playlist) {
+    return 0;
+  }
 
-	@Override
-	public boolean updateMediaPlaylistPlaybackURI(PlaylistModel playlist)
-	{
-		boolean retVal = true;
+  /**
+   * No-op in the context of Livepeer.
+   *
+   * @param playlist not used
+   * @return 0
+   */
+  @Override
+  public int sendMediaPlaylist(PlaylistModel playlist) {
+    return 0;
+  }
 
-		String path = "../" + getDstStreamName() + (backup ? "-b/" : "/") + playlist.getUri().toString();
-		try
-		{
-			playlist.setUri(new URI(path));
-		}
-		catch (URISyntaxException e)
-		{
-			logError("updateMediaPlaylistPlaybackURI", "Failed to update media playlist to " + path);
-			retVal = false;
-		}
-		return retVal;
-	}
+  /**
+   * Livepeer wants "0.ts" instead of "media_0.ts", so
+   */
+  public String getSegmentUri(MediaSegmentModel mediaSegment) {
+    return mediaSegment.getUri().toString().replace("media_", "");
+  }
 
-	@Override
-	public boolean updateMediaSegmentPlaybackURI(MediaSegmentModel mediaSegment)
-	{
-		boolean retVal = true;
-		String newPath = mediaSegment.getUri().getPath();
+  /**
+   * This is the important function that takes care of sending a media segment to
+   * the Livepeer API.
+   *
+   * @param mediaSegment
+   * @return
+   */
+  @Override
+  public int sendMediaSegment(MediaSegmentModel mediaSegment) {
+    String url = null;
+    int size = 0;
+    try {
+      PacketFragmentList list = mediaSegment.getFragmentList();
+      if (list != null && list.size() != 0) {
+        url = httpAddress + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment);
+        LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
+        HttpPut req = new HttpPut(url);
+        req.setEntity(entity);
+        HttpResponse res = httpClient.execute(req);
 
-		// to prevent overriding prior segments if the stream were to reset,
-		// we'll use the sessionStr to create a sub directory to keep the
-		// media segments in.
+        int status = res.getStatusLine().getStatusCode();
+        size = entity.getSize();
+        if (status < 200 || status >= 300)
+          size = 0;
+      } else
+        size = 1;  // empty fragment list.
+    } catch (Exception e) {
+      logError("sendMediaSegment", "Failed to send media segment data to " + url.toString(), e);
+      size = 0;
+    }
+    return size;
+  }
 
-		try
-		{
-			String temp = getRandomSessionStr() + "/" + newPath;
-			mediaSegment.setUri(new URI(temp));
-		}
-		catch (Exception e)
-		{
-			retVal = false;
-			logError("updateMediaSegmentPlaybackURI", "Invalid path " + newPath, e);
-		}
-		return retVal;
-	}
+  /**
+   * No-op in the context of Livepeer. Our segments are deleted automatically after a timeout by
+   * the go-livepeer server.
+   *
+   * @param mediaSegment media segment
+   * @return 0
+   */
+  @Override
+  public int deleteMediaSegment(MediaSegmentModel mediaSegment) {
+    return 0;
+  }
 
-	@Override
-	public int sendGroupMasterPlaylist(String groupName, PlaylistModel playlist)
-	{
-		int retVal = 0;
-		String playlistPath = playlist.getUri().getPath().replaceFirst("../", basePath);
+  /**
+   * Currently a no-op in the context of the Livepeer API. Maybe
+   * eventually will allow for a second API destination.
+   *
+   * @param backup should backup this stream? does nothing.
+   */
+  @Override
+  public void setSendToBackupServer(boolean backup) {
+    this.backup = backup;
+  }
 
-		retVal = writePlaylist(playlist, playlistPath);
-		return retVal;
-	}
+  /**
+   * Currently a no-op in the context of the Livepeer API. Maybe
+   * eventually will allow for a second API destination.
+   *
+   * @return is backup?
+   */
+  @Override
+  public boolean isSendToBackupServer() {
+    return backup;
+  }
 
-	@Override
-	public int sendMasterPlaylist(PlaylistModel playlist)
-	{
-		int retVal = 0;
-		String playlistPath = playlist.getUri().getPath().replaceFirst("../", basePath);
+  /**
+   * Currently a no-op in the context of LivepeerWowza. Potentially
+   * worth implementing if it usefully reports status in the dashboard
+   * or some such.
+   *
+   * @return true
+   */
+  @Override
+  public boolean outputOpen() {
+    return true;
+  }
 
-		retVal = writePlaylist(playlist, playlistPath);
-		return retVal;
-	}
+  /**
+   * Currently a no-op in the context of LivepeerWowza. Potentially
+   * worth implementing if it usefully reports status in the dashboard
+   * or some such.
+   *
+   * @return true
+   */
+  @Override
+  public boolean outputClose() {
+    return true;
+  }
 
-	@Override
-	public int sendMediaPlaylist(PlaylistModel playlist)
-	{
-		int retVal = 0;
-		String playlistPath = playlist.getUri().getPath().replaceFirst("../", basePath);
+  @Override
+  public String getDestionationLogData() {
+    return "{\"" + httpAddress + "/" + getDestinationPath() + "\"}";
+  }
 
-		retVal = writePlaylist(playlist, playlistPath);
-		return retVal;
-	}
-	
-	/**
-	 * Livepeer wants "0.ts" instead of "media_0.ts", so
-	 */
-	public String getSegmentUri(MediaSegmentModel mediaSegment) {
-		return mediaSegment.getUri().toString().replace("media_", "");
-	}
-
-	@Override
-	public int sendMediaSegment(MediaSegmentModel mediaSegment)
-	{
-		String url = null;
-		int size = 0;
-		try
-		{
-			PacketFragmentList list = mediaSegment.getFragmentList();
-			if (list != null && list.size() != 0)
-			{
-				url = httpAddress + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment);
-				LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
-				HttpPut req = new HttpPut(url);
-				req.setEntity(entity);
-				HttpResponse res = httpClient.execute(req);
-
-				int status = res.getStatusLine().getStatusCode();
-				size = entity.getSize();
-				if (status < 200 || status >= 300)
-					size = 0;
-			}
-			else
-				size = 1;  // empty fragment list.
-		}
-		catch (Exception e)
-		{
-			logError("sendMediaSegment", "Failed to send media segment data to " + url.toString(), e);
-			size = 0;
-		}
-		return size;
-	}
-
-	@Override
-	public int deleteMediaSegment(MediaSegmentModel mediaSegment)
-	{
-		int retVal = 0;
-		URL url = null;
-		HttpURLConnection conn = null;
-		OutputStream out = null;
-		try
-		{
-			url = new URL(httpAddress + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment));
-			conn = (HttpURLConnection)url.openConnection();
-			conn.setConnectTimeout(connectionTimeout);
-			conn.setReadTimeout(readTimeout);
-			conn.setRequestMethod("DELETE");
-			int status = conn.getResponseCode();
-			if (status >= 200 || status < 300)
-				retVal = 1;
-			else
-				logWarn("deleteMediaSegment", "Failed to delete media segment " + getSegmentUri(mediaSegment) + ", http status: " + status);
-		}
-		catch (Exception e)
-		{
-			logError("deleteMediaSegment", "Failed to delete media segment " + url.toString(), e);
-			retVal = 0;
-		}
-		finally
-		{
-			if (out != null)
-			{
-				try
-				{
-					out.close();
-				}
-				catch (IOException e)
-				{
-					// ignore
-				}
-			}
-			if (conn != null)
-			{
-				conn.disconnect();
-			}
-		}
-		return retVal;
-	}
-
-	@Override
-	public void setSendToBackupServer(boolean backup)
-	{
-		this.backup = backup;
-	}
-
-	@Override
-	public boolean isSendToBackupServer()
-	{
-		return backup;
-	}
-
-	@Override
-	public boolean outputOpen()
-	{
-		return true;
-	}
-
-	@Override
-	public boolean outputClose()
-	{
-		return true;
-	}
-
-	@Override
-	public String getDestionationLogData()
-	{
-		return "{\"" + httpAddress + "/" + getDestinationPath() + "\"}";
-	}
-
-	private int writePlaylist(PlaylistModel playlist, String playlistPath)
-	{
-		int retVal = 0;
-		URL url = null;
-		HttpURLConnection conn = null;
-		try
-		{
-			url = new URL(httpAddress + "/" + playlistPath);
-			conn = (HttpURLConnection)url.openConnection();
-			conn.setConnectTimeout(connectionTimeout);
-			conn.setReadTimeout(readTimeout);
-			conn.setDoOutput(true);
-			conn.setRequestMethod("PUT");
-
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-			PlaylistWriter writer = new PlaylistWriter(out, getContextStr());
-			String outStr = "";
-			if (writer.write(playlist))
-			{
-				outStr = out.toString();
-				byte[] bytes = outStr.getBytes();
-				conn.getOutputStream().write(bytes);
-				retVal = bytes.length;
-			}
-			int status = conn.getResponseCode();
-			if (status < 200 || status >= 300)
-			{
-				retVal = 0;
-				logWarn("writePlaylist", "Failed to send playlist data to " + playlist.getUri() + ", http status: " + status + ", playlist: " + outStr);
-			}
-
-		}
-		catch (Exception e)
-		{
-			logError("sendMediaSegment", "Failed to send playlist data to " + url.toString(), e);
-			retVal = 0;
-		}
-		finally
-		{
-			if (conn != null)
-			{
-				conn.disconnect();
-			}
-		}
-		return retVal;
-	}
-
-	private String getDestinationPath()
-	{
-		if (!backup)
-			return basePath + getDstStreamName();
-		return basePath + getDstStreamName() + "-b";
-	}
+  private String getDestinationPath() {
+    if (!backup)
+      return basePath + getDstStreamName();
+    return basePath + getDstStreamName() + "-b";
+  }
 
 }

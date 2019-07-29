@@ -140,10 +140,12 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		livepeer = new LivepeerAPI();
 		livepeer.setLogger(getLogger());
 		appInstance.setLiveStreamTranscoderControl(new TranscoderControl());
-		
 	}
 
 	public void onStreamCreate(IMediaStream stream) {
+		// TODO FIXME this was intended to ignore our transcoded streams to avoid an
+		// infinite loop. instead, it ignores all local streams, including stream files
+		// and such. need to be more careful and only ignore transcoded renditions.
 		if (stream.getClientId() == -1) {
 			getLogger().info("Ignoring local stream");
 			return;
