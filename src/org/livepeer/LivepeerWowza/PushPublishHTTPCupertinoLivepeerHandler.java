@@ -152,33 +152,33 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
    *
    * @param groupName not used
    * @param playlist  not used
-   * @return 0
+   * @return 1
    */
   @Override
   public int sendGroupMasterPlaylist(String groupName, PlaylistModel playlist) {
-    return 0;
+    return 1;
   }
 
   /**
    * No-op in the context of Livepeer.
    *
    * @param playlist not used
-   * @return 0
+   * @return 1
    */
   @Override
   public int sendMasterPlaylist(PlaylistModel playlist) {
-    return 0;
+    return 1;
   }
 
   /**
    * No-op in the context of Livepeer.
    *
    * @param playlist not used
-   * @return 0
+   * @return 1
    */
   @Override
   public int sendMediaPlaylist(PlaylistModel playlist) {
-    return 0;
+    return 1;
   }
 
   /**
@@ -226,11 +226,11 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
    * the go-livepeer server.
    *
    * @param mediaSegment media segment
-   * @return 0
+   * @return 1
    */
   @Override
   public int deleteMediaSegment(MediaSegmentModel mediaSegment) {
-    return 0;
+    return 1;
   }
 
   /**
