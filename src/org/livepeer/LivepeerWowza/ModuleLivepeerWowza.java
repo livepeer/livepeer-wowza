@@ -29,6 +29,10 @@ import com.wowza.wms.application.*;
 import com.wowza.wms.media.model.MediaCodecInfoAudio;
 import com.wowza.wms.media.model.MediaCodecInfoVideo;
 
+/**
+ * Livepeer Wowza module. It's designed to be a drop-in replacement for Wowza's
+ * transcoding services, offloading everything to a hosted Livepeer API network.
+ */
 public class ModuleLivepeerWowza extends ModuleBase {
 	class StreamListener implements IMediaStreamActionNotify3 {
 		public void onMetaData(IMediaStream stream, AMFPacket metaDataPacket) {
@@ -36,8 +40,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		}
 
 		public void onPauseRaw(IMediaStream stream, boolean isPause, double location) {
-			System.out.println(
-					"onPauseRaw[" + stream.getContextStr() + "]: isPause:" + isPause + " location:" + location);
+			System.out.println("onPauseRaw[" + stream.getContextStr() + "]: isPause:" + isPause + " location:" + location);
 		}
 
 		public void onPause(IMediaStream stream, boolean isPause, double location) {
@@ -52,7 +55,9 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		public void onPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
 			try {
 				System.out.println("LIVEPEER onPublish start");
-				String livepeerID = livepeer.createWowzaFromApplication("_defaultVHost_", "live").getId();
+				String vHostName = _appInstance.getVHost().getName();
+				String applicationName = _appInstance.getApplication().getName();
+				String livepeerID = livepeer.createWowzaFromApplication(vHostName, applicationName).getId();
 				System.out.println("Got LivepeerID="+livepeerID);
 				List<LivepeerAPI.LivepeerAPIResourceBroadcaster> broadcasters = livepeer.getBroadcasters();
 				Random rand = new Random();
@@ -68,9 +73,8 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 				http.init(_appInstance, streamName, stream, new HashMap<String, String>(),
 						new HashMap<String, String>(), null, true);
-//				http.load(new HashMap<String, String>());
 				http.connect();
-				
+
 				System.out.println("LIVEPEER onPublish end");
 
 //				PushPublishRTMP publisher = new PushPublishRTMP();
@@ -114,13 +118,13 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		}
 
 		public void onCodecInfoAudio(IMediaStream stream, MediaCodecInfoAudio codecInfoAudio) {
-			System.out.println("onCodecInfoAudio[" + stream.getContextStr() + " Audio Codec"
-					+ codecInfoAudio.toCodecsStr() + "]: ");
+			System.out.println(
+					"onCodecInfoAudio[" + stream.getContextStr() + " Audio Codec" + codecInfoAudio.toCodecsStr() + "]: ");
 		}
 
 		public void onCodecInfoVideo(IMediaStream stream, MediaCodecInfoVideo codecInfoVideo) {
-			System.out.println("onCodecInfoVideo[" + stream.getContextStr() + " Video Codec"
-					+ codecInfoVideo.toCodecsStr() + "]: ");
+			System.out.println(
+					"onCodecInfoVideo[" + stream.getContextStr() + " Video Codec" + codecInfoVideo.toCodecsStr() + "]: ");
 		}
 	}
 

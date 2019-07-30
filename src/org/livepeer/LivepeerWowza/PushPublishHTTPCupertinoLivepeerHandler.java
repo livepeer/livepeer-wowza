@@ -208,6 +208,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
         req.setEntity(entity);
         HttpResponse res = httpClient.execute(req);
 
+
         int status = res.getStatusLine().getStatusCode();
         size = entity.getSize();
         if (status < 200 || status >= 300)
