@@ -23,6 +23,84 @@ import org.apache.http.entity.AbstractHttpEntity;
 
 public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupertino {
 
+  protected String basePath = "live/";
+  protected String httpAddress;
+  protected HttpClient httpClient;
+
+  boolean backup = false;
+  String groupName = null;
+  private int connectionTimeout = 5000;
+  private int readTimeout = 5000;
+
+  public PushPublishHTTPCupertinoLivepeerHandler(String broadcaster) throws LicensingException {
+    super();
+    httpAddress = broadcaster;
+    System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
+  }
+
+  public void setHttpClient(HttpClient client) {
+    httpClient = client;
+  }
+
+  @Override
+  public void load(HashMap<String, String> dataMap) {
+    System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler load " + dataMap);
+    super.load(dataMap);
+  }
+
+  /**
+   * Livepeer wants "0.ts" instead of "media_0.ts", so
+   */
+  public String getSegmentUri(MediaSegmentModel mediaSegment) {
+    return mediaSegment.getUri().toString().replace("media_", "");
+  }
+
+  /**
+   * This is the important function that takes care of sending a media segment to
+   * the Livepeer API.
+   *
+   * @param mediaSegment
+   * @return
+   */
+  @Override
+  public int sendMediaSegment(MediaSegmentModel mediaSegment) {
+    String url = null;
+    int size = 0;
+    try {
+      PacketFragmentList list = mediaSegment.getFragmentList();
+      if (list != null && list.size() != 0) {
+        url = httpAddress + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment);
+        LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
+        HttpPut req = new HttpPut(url);
+        req.setEntity(entity);
+        HttpResponse res = httpClient.execute(req);
+
+
+        int status = res.getStatusLine().getStatusCode();
+        size = entity.getSize();
+        if (status < 200 || status >= 300)
+          size = 0;
+      } else
+        size = 1;  // empty fragment list.
+    } catch (Exception e) {
+      logError("sendMediaSegment", "Failed to send media segment data to " + url.toString(), e);
+      size = 0;
+    }
+    return size;
+  }
+
+  @Override
+  public String getDestionationLogData() {
+    return "{\"" + httpAddress + "/" + getDestinationPath() + "\"}";
+  }
+
+  private String getDestinationPath() {
+    if (!backup)
+      return basePath + getDstStreamName();
+    return basePath + getDstStreamName() + "-b";
+  }
+
+
   /**
    * Livepeer segments as an HttpEntity suitable for PUTing with Apache HttpClient
    */
@@ -76,31 +154,8 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 
   }
 
-  protected String basePath = "live/";
-  protected String httpAddress;
-  protected HttpClient httpClient;
-
-  boolean backup = false;
-  String groupName = null;
-  private int connectionTimeout = 5000;
-  private int readTimeout = 5000;
-
-  public PushPublishHTTPCupertinoLivepeerHandler(String broadcaster) throws LicensingException {
-    super();
-    httpAddress = broadcaster;
-    System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
-    basePath += UUID.randomUUID() + "/";
-  }
-
-  public void setHttpClient(HttpClient client) {
-    httpClient = client;
-  }
-
-  @Override
-  public void load(HashMap<String, String> dataMap) {
-    System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler load " + dataMap);
-    super.load(dataMap);
-  }
+  // Welcome to... the no-op zone
+  // https://bit.ly/2yoY9fY
 
   /**
    * No-op in the context of Livepeer. We get all necessary data from the segments themselves.
@@ -182,47 +237,6 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
   }
 
   /**
-   * Livepeer wants "0.ts" instead of "media_0.ts", so
-   */
-  public String getSegmentUri(MediaSegmentModel mediaSegment) {
-    return mediaSegment.getUri().toString().replace("media_", "");
-  }
-
-  /**
-   * This is the important function that takes care of sending a media segment to
-   * the Livepeer API.
-   *
-   * @param mediaSegment
-   * @return
-   */
-  @Override
-  public int sendMediaSegment(MediaSegmentModel mediaSegment) {
-    String url = null;
-    int size = 0;
-    try {
-      PacketFragmentList list = mediaSegment.getFragmentList();
-      if (list != null && list.size() != 0) {
-        url = httpAddress + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment);
-        LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
-        HttpPut req = new HttpPut(url);
-        req.setEntity(entity);
-        HttpResponse res = httpClient.execute(req);
-
-
-        int status = res.getStatusLine().getStatusCode();
-        size = entity.getSize();
-        if (status < 200 || status >= 300)
-          size = 0;
-      } else
-        size = 1;  // empty fragment list.
-    } catch (Exception e) {
-      logError("sendMediaSegment", "Failed to send media segment data to " + url.toString(), e);
-      size = 0;
-    }
-    return size;
-  }
-
-  /**
    * No-op in the context of Livepeer. Our segments are deleted automatically after a timeout by
    * the go-livepeer server.
    *
@@ -278,17 +292,6 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
   @Override
   public boolean outputClose() {
     return true;
-  }
-
-  @Override
-  public String getDestionationLogData() {
-    return "{\"" + httpAddress + "/" + getDestinationPath() + "\"}";
-  }
-
-  private String getDestinationPath() {
-    if (!backup)
-      return basePath + getDstStreamName();
-    return basePath + getDstStreamName() + "-b";
   }
 
 }

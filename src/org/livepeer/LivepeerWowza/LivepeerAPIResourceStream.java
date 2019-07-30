@@ -10,18 +10,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of LivepeerAPI's "/wowza" object
+ * Representation of LivepeerAPI's "/stream" object
  */
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-public class LivepeerAPIResourceWowza {
-  private TranscoderAppConfig transcoderAppConfig;
+public class LivepeerAPIResourceStream {
+  LivepeerAPIResourceStreamWowza wowza = new LivepeerAPIResourceStreamWowza();
   private String id;
-  private Map<String, TranscoderTemplateAppConfig> transcoderTemplateAppConfig;
+
 
   /**
    * Create an empty API Resource. Mostly used by the JSON serializer when GETing objects
    */
-  public LivepeerAPIResourceWowza() {
+  public LivepeerAPIResourceStream() {
 
   }
 
@@ -31,12 +31,11 @@ public class LivepeerAPIResourceWowza {
    * @param vhost
    * @param application
    */
-  public LivepeerAPIResourceWowza(String vhost, String application) {
+  public LivepeerAPIResourceStream(String vhost, String application) {
     id = null;
 
-    transcoderAppConfig = new TranscoderAppConfig(vhost, application);
+    TranscoderAppConfig transcoderAppConfig = new TranscoderAppConfig(vhost, application);
     transcoderAppConfig.loadObject();
-    transcoderTemplateAppConfig = new HashMap<>();
 
     for (ShortObject t : transcoderAppConfig.getTemplates().getTemplates()) {
       TranscoderTemplateAppConfig ttac = new TranscoderTemplateAppConfig(vhost, application, t.getId());
@@ -54,19 +53,25 @@ public class LivepeerAPIResourceWowza {
     id = _id;
   }
 
-  public TranscoderAppConfig getTranscoderAppConfig() {
-    return transcoderAppConfig;
-  }
+  @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+  public class LivepeerAPIResourceStreamWowza {
+    private Map<String, TranscoderTemplateAppConfig> transcoderTemplateAppConfig = new HashMap<>();
+    private TranscoderAppConfig transcoderAppConfig;
 
-  public void setTranscoderAppConfig(TranscoderAppConfig tac) {
-    transcoderAppConfig = tac;
-  }
+    public TranscoderAppConfig getTranscoderAppConfig() {
+      return transcoderAppConfig;
+    }
 
-  public Map<String, TranscoderTemplateAppConfig> getTranscoderTemplateAppConfig() {
-    return transcoderTemplateAppConfig;
-  }
+    public void setTranscoderAppConfig(TranscoderAppConfig tac) {
+      transcoderAppConfig = tac;
+    }
 
-  public void setTranscoderTemplateAppConfig(Map<String, TranscoderTemplateAppConfig> ttac) {
-    transcoderTemplateAppConfig = ttac;
+    public Map<String, TranscoderTemplateAppConfig> getTranscoderTemplateAppConfig() {
+      return transcoderTemplateAppConfig;
+    }
+
+    public void setTranscoderTemplateAppConfig(Map<String, TranscoderTemplateAppConfig> ttac) {
+      transcoderTemplateAppConfig = ttac;
+    }
   }
 }

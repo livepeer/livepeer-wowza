@@ -57,8 +57,8 @@ public class ModuleLivepeerWowza extends ModuleBase {
 				System.out.println("LIVEPEER onPublish start");
 				String vHostName = _appInstance.getVHost().getName();
 				String applicationName = _appInstance.getApplication().getName();
-				String livepeerID = livepeer.createWowzaFromApplication(vHostName, applicationName).getId();
-				System.out.println("Got LivepeerID="+livepeerID);
+				String livepeerId = livepeer.createWowzaFromApplication(vHostName, applicationName).getId();
+				System.out.println("Got LivepeerID="+livepeerId);
 				List<LivepeerAPI.LivepeerAPIResourceBroadcaster> broadcasters = livepeer.getBroadcasters();
 				Random rand = new Random();
 				LivepeerAPI.LivepeerAPIResourceBroadcaster broadcaster = broadcasters.get(rand.nextInt(broadcasters.size()));
@@ -77,28 +77,6 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 				System.out.println("LIVEPEER onPublish end");
 
-//				PushPublishRTMP publisher = new PushPublishRTMP();
-//				publisher.addListener(new RTMPListener());
-//
-//				// Source stream
-//				publisher.setAppInstance(_appInstance);
-////				publisher.setSrcStream(stream);
-//				publisher.setSrcStreamName(streamName);
-////				publisher.setWaitOnMetadataAvailable(true);
-//
-//				// Destination stream
-//				publisher.setHostname("35.232.200.158");
-//				publisher.setPort(1935);
-//				publisher.setDstApplicationName("stream");
-//				publisher.setDstStreamName("eli");
-//				publisher.setRemoveDefaultAppInstance(true);
-//				synchronized(publishers)
-//				{
-//					publishers.put(stream, publisher);
-//				}
-//
-//				publisher.connect();
-//				getLogger().info("LIVEPEER connected");
 			} catch (Exception e) {
 				System.out.println("LIVEPEER HTTP: " + e);
 			}

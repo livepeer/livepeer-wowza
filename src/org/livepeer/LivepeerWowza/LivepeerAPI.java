@@ -2,13 +2,9 @@ package org.livepeer.LivepeerWowza;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wowza.wms.logging.WMSLogger;
-import com.wowza.wms.rest.ShortObject;
-import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFileAppConfig;
-import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFilesAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderTemplateAppConfig;
 import org.apache.http.HttpResponse;
@@ -24,7 +20,6 @@ import org.apache.http.ssl.SSLContexts;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -105,10 +100,10 @@ public class LivepeerAPI {
    * @return wowza resource
    * @throws IOException something went wrong talking to the Livepeer API
    */
-  public LivepeerAPIResourceWowza createWowzaFromApplication(String vhost, String application) throws IOException {
-    LivepeerAPIResourceWowza body = new LivepeerAPIResourceWowza(vhost, application);
+  public LivepeerAPIResourceStream createWowzaFromApplication(String vhost, String application) throws IOException {
+    LivepeerAPIResourceStream body = new LivepeerAPIResourceStream(vhost, application);
     HttpResponse response = _post("/wowza", body);
-    LivepeerAPIResourceWowza info = mapper.readValue(response.getEntity().getContent(), LivepeerAPIResourceWowza.class);
+    LivepeerAPIResourceStream info = mapper.readValue(response.getEntity().getContent(), LivepeerAPIResourceStream.class);
     return info;
   }
 
