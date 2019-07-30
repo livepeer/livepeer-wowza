@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -14,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
+	"github.com/jbowtie/gokogiri"
 )
 
 type Server struct {
@@ -34,6 +36,46 @@ type Version struct {
 }
 
 func main() {
+	// resp, _ := http.Get("http://www.google.com")
+	// page, _ := ioutil.ReadAll(resp.Body)
+
+	// // parse the web page
+	// doc, _ := gokogiri.ParseHtml(page)
+
+	// // perform operations on the parsed page -- consult the tests for examples
+
+	// // important -- don't forget to free the resources when you're done!
+	// glog.Error("HERE IS THE TEXT: ", doc.ToText())
+	// doc.Free()
+
+	// 	input := "<foo></foo>"
+	// 	expected := `<?xml version="1.0" encoding="utf-8"?>
+	// <foo/>
+	// `
+	// 	doc, err := gokogiri.ParseXml([]byte(input))
+	// 	if err != nil {
+	// 		glog.Error("Parsing has error:", err)
+	// 		return
+	// 	}
+
+	// 	if doc.String() != expected {
+	// 		glog.Error("the output of the xml doc does not match the expected")
+	// 	}
+
+	// 	expected = `<?xml version="1.0" encoding="utf-8"?>
+	// <foo>
+	//   <bar/>
+	// </foo>
+	// `
+	// 	doc.Root().AddChild("<bar/>")
+	// 	if doc.String() != expected {
+	// 		glog.Error("the output of the xml doc does not match the expected")
+	// 	}
+	// 	glog.Error(doc.String())
+	// 	doc.Free()
+
+	// 	return
+
 	flag.Set("logtostderr", "true")
 	wowzaDir := flag.String("wowzaDir", "", "path to WowzaStreamingEngine folder")
 	channel := flag.String("channel", "latest", "branch name for latest version of JAR file")
@@ -84,6 +126,7 @@ func findAndSaveApiKey(confDir string) (string, error) {
 		glog.Error("Could not open server xml file, error: ", err)
 		return "", err
 	}
+
 	fmt.Println("Successfully Opened Server.xml")
 	defer serverXml.Close()
 
@@ -94,60 +137,103 @@ func findAndSaveApiKey(confDir string) (string, error) {
 		return "", err
 	}
 
-	// Check for API key in server.xml
-	var key string
-	var server Server
-	// TODO: UNMARSHALING NOT WORKING PROPERLY
-	err = xml.Unmarshal(serverBytes, &server)
+	doc, err := gokogiri.ParseXml(serverBytes)
 	if err != nil {
-		glog.Error("Could not unmarshal xml bytes, err: ", err)
+		glog.Error("Parsing has error:", err)
 		return "", err
 	}
 
-	for i := 0; i < len(server.Properties); i++ {
-		glog.Error("HERE ARE PROPERTIES: ", server.Properties[i])
-		if strings.Contains("livepeer.org/api-key", server.Properties[i].Name) {
-			key = server.Properties[i].Value
+	propertiesNodes, err := doc.Search("/Root/Server/Properties")
+	if err != nil {
+		glog.Error("Property node search has error:", err)
+		return "", err
+	}
+	if len(propertiesNodes) < 1 {
+		glog.Error("<Properties> tag not found")
+		return "", errors.New("<Properties> tag not found")
+	}
+
+	var apiKey string
+	for _, propertiesNode := range propertiesNodes {
+		nodes, err := propertiesNode.Search("Property[Name='livepeer.org/api-key']")
+		if err != nil {
+			glog.Error("Property node search has error:", err)
+			return "", err
+		}
+		if len(nodes) > 0 {
+			valueNodes, err := nodes[0].Search("Value")
+			if err != nil {
+				glog.Error("Searching for Value as error:", err)
+				return "", err
+			}
+			apiKey = valueNodes[0].InnerHtml()
 			break
 		}
 	}
 
-	// If no API key in xml file, prompt user for key in CLI
-	var xmlKey string
-	if key == "" {
-		for xmlKey == "" {
-			xmlKey := promptUserForAPIKey()
+	if apiKey == "" {
+		for apiKey == "" {
+			apiKey = promptUserForAPIKey()
 
 			// TODO: check for valid API key in the future
-			if xmlKey == "" {
+			if apiKey == "" {
 				glog.Error("Invalid API key provided")
 				continue
 			}
+		}
 
-			// places valid API key in XML
-			keyProperty := Property{Name: "livepeer.org/api-key", Value: xmlKey}
-			server.Properties = append(server.Properties, keyProperty)
-			bytes, err := xml.Marshal(server)
-			if err != nil {
-				glog.Error("failed to marshal Server.xml file, error: ", err)
-			}
-
-			// TODO : FIX ... this probably doesn't write the comlete file :(
-			err = ioutil.WriteFile(confDir, bytes, 0644)
-			if err != nil {
-				glog.Error("failed to write API key to Server.xml file, error: ", err)
-			}
+		propertiesNode := propertiesNodes[0]
+		propertiesNode.AddChild(fmt.Sprintf(`
+			<Property>
+				<Name>livepeer.org/api-key</Name>
+				<Value>%s</Value>
+				<Type>String</Type>
+			</Property>
+		`, apiKey))
+		// TODO : FIX ... this probably doesn't write the comlete file :(
+		err = ioutil.WriteFile(confDir, []byte(doc.String()), 0644)
+		if err != nil {
+			glog.Error("failed to write API key to Server.xml file, error: ", err)
 		}
 	}
 
-	return xmlKey, nil
+	return apiKey, nil
+
+	// glog.Error("Doc:", doc.String())
+	// glog.Error("Search stuff:", stuff)
+	// if err != nil {
+	// 	glog.Error("Parsing has error:", err)
+	// 	return "", err
+	// }
+
+	// // Check for API key in server.xml
+	// var key string
+	// var server Server
+	// // TODO: UNMARSHALING NOT WORKING PROPERLY
+	// err = xml.Unmarshal(serverBytes, &server)
+	// if err != nil {
+	// 	glog.Error("Could not unmarshal xml bytes, err: ", err)
+	// 	return "", err
+	// }
+
+	// for i := 0; i < len(server.Properties); i++ {
+	// 	glog.Error("HERE ARE PROPERTIES: ", server.Properties[i])
+	// 	if strings.Contains("livepeer.org/api-key", server.Properties[i].Name) {
+	// 		key = server.Properties[i].Value
+	// 		break
+	// 	}
+	// }
+
+	// // If no API key in xml file, prompt user for key in CLI
+
+	// return xmlKey, nil
 }
 
 func promptUserForAPIKey() string {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("No API key provided - please enter your Livepeer API key:")
 	key, _ := reader.ReadString('\n')
-	return key
+	return strings.Trim(key, "\n")
 }
 
 func downloadLatestJarFile(channel string, wowzaDir string) error {
