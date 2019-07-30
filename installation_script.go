@@ -3,8 +3,6 @@ package main
 import (
 	"bufio"
 	"encoding/json"
-	"encoding/xml"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -16,71 +14,21 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/jbowtie/gokogiri"
+	"github.com/jbowtie/gokogiri/xml"
 )
 
-type Server struct {
-	XMLRoot    xml.Name   `xml:"Root"`
-	Server     xml.Name   `xml:"Server"`
-	Properties []Property `xml:"Properties"`
-}
-
-type Property struct {
-	Name  string `xml:Name`
-	Value string `xml:Value`
-	Type  string `xml:String`
-}
-
-type Version struct {
-	version string
-	url     string
+type version struct {
+	Version string `json:"version"`
+	URL     string `json:"url"`
 }
 
 func main() {
-	// resp, _ := http.Get("http://www.google.com")
-	// page, _ := ioutil.ReadAll(resp.Body)
-
-	// // parse the web page
-	// doc, _ := gokogiri.ParseHtml(page)
-
-	// // perform operations on the parsed page -- consult the tests for examples
-
-	// // important -- don't forget to free the resources when you're done!
-	// glog.Error("HERE IS THE TEXT: ", doc.ToText())
-	// doc.Free()
-
-	// 	input := "<foo></foo>"
-	// 	expected := `<?xml version="1.0" encoding="utf-8"?>
-	// <foo/>
-	// `
-	// 	doc, err := gokogiri.ParseXml([]byte(input))
-	// 	if err != nil {
-	// 		glog.Error("Parsing has error:", err)
-	// 		return
-	// 	}
-
-	// 	if doc.String() != expected {
-	// 		glog.Error("the output of the xml doc does not match the expected")
-	// 	}
-
-	// 	expected = `<?xml version="1.0" encoding="utf-8"?>
-	// <foo>
-	//   <bar/>
-	// </foo>
-	// `
-	// 	doc.Root().AddChild("<bar/>")
-	// 	if doc.String() != expected {
-	// 		glog.Error("the output of the xml doc does not match the expected")
-	// 	}
-	// 	glog.Error(doc.String())
-	// 	doc.Free()
-
-	// 	return
-
 	flag.Set("logtostderr", "true")
 	wowzaDir := flag.String("wowzaDir", "", "path to WowzaStreamingEngine folder")
 	channel := flag.String("channel", "latest", "branch name for latest version of JAR file")
 	apiKey := flag.String("apiKey", "", "livepeer api key")
 	flag.Parse()
+
 	// Set wowza default directory appropriate for each operating system
 	if *wowzaDir == "" {
 		if strings.Contains(runtime.GOOS, "windows") {
@@ -97,13 +45,14 @@ func main() {
 		}
 	}
 
-	// If no API key was provided, look for one in xml or prompt user for key
+	// If no API key was provided, look for one in xml or prompt user for key, then save in XML file
 	if *apiKey == "" {
-		confDir := filepath.Join(*wowzaDir, "conf/Server.xml")
+		serverFilePath := filepath.Join(*wowzaDir, "conf/Server.xml")
 
-		if _, err := os.Stat(confDir); err == nil {
-			key, err := findAndSaveApiKey(confDir)
+		if _, err := os.Stat(serverFilePath); err == nil {
+			key, err := findAndSaveAPIKey(serverFilePath)
 			if err != nil {
+				glog.Error(err)
 				panic(err)
 			}
 			*apiKey = key
@@ -116,55 +65,92 @@ func main() {
 		panic(err)
 	}
 
+	// Insert Livepeer Wowza module information into all Application.xml files
+	err = filepath.Walk(*wowzaDir, insertLivepeerWowzaModule)
+	if err != nil {
+		panic(err)
+	}
 }
 
-func findAndSaveApiKey(confDir string) (string, error) {
+func insertLivepeerWowzaModule(path string, f os.FileInfo, err error) error {
+	if filepath.Base(path) == "Application.xml" {
+		glog.Error("Inserting module into: ", path)
+		err = insertModule(path)
+		return err
+	}
+	return nil
+}
 
-	// Look for api key in server.xml
-	serverXml, err := os.Open(confDir)
-	if err != nil {
-		glog.Error("Could not open server xml file, error: ", err)
-		return "", err
+func insertModule(appFilePath string) error {
+	if _, err := os.Stat(appFilePath); err != nil {
+		return fmt.Errorf("Could not find Application.xml file, error: %v", err)
 	}
 
-	fmt.Println("Successfully Opened Server.xml")
-	defer serverXml.Close()
-
-	// Open xml file as a byte array
-	serverBytes, err := ioutil.ReadAll(serverXml)
+	doc, err := createSearchableXMLDocument(appFilePath)
 	if err != nil {
-		glog.Error("Could not read opened server.xml as a byte array, error: ", serverBytes)
-		return "", err
+		return fmt.Errorf("Error creating searable XML application.xml: %v", err)
 	}
 
-	doc, err := gokogiri.ParseXml(serverBytes)
+	modulesNodes, err := doc.Search("/Root/Application/Modules")
 	if err != nil {
-		glog.Error("Parsing has error:", err)
-		return "", err
+		return fmt.Errorf("Modules node search error: %v", err)
 	}
 
+	// Return if Livepeer module has already been inserted
+	for _, modulesNodes := range modulesNodes {
+		nodes, err := modulesNodes.Search("Module[Name='LivepeerWowza']")
+		if err != nil {
+			return fmt.Errorf("Modules node search error: %v", err)
+		}
+		if len(nodes) > 0 {
+			return nil
+		}
+	}
+
+	// Add module to XML document
+	modulesNodes[0].AddChild(fmt.Sprint(`
+		<Module>
+			<Name>LivepeerWowza</Name>
+			<Description>Offloads Wowza transcoding to the Livepeer network</Description>
+			<Class>org.livepeer.LivepeerWowza.ModuleLivepeerWowza</Class>
+		</Module>`))
+
+	err = ioutil.WriteFile(appFilePath, []byte(doc.String()), 0644)
+	if err != nil {
+		return fmt.Errorf("Failed to write module to XML file, error: %v", err)
+	}
+
+	return nil
+
+}
+
+func findAndSaveAPIKey(serverFilePath string) (string, error) {
+	// Create searchable xml document
+	doc, err := createSearchableXMLDocument(serverFilePath)
+	if err != nil {
+		return "", fmt.Errorf("Error creating searable XML serverFilePath: %v", err)
+	}
+
+	// Search for properties tag and extract API key
 	propertiesNodes, err := doc.Search("/Root/Server/Properties")
 	if err != nil {
-		glog.Error("Property node search has error:", err)
-		return "", err
+		return "", fmt.Errorf("Property node search error: %v", err)
 	}
+
 	if len(propertiesNodes) < 1 {
-		glog.Error("<Properties> tag not found")
-		return "", errors.New("<Properties> tag not found")
+		return "", fmt.Errorf("<Properties> tag not found %v", err)
 	}
 
 	var apiKey string
 	for _, propertiesNode := range propertiesNodes {
 		nodes, err := propertiesNode.Search("Property[Name='livepeer.org/api-key']")
 		if err != nil {
-			glog.Error("Property node search has error:", err)
-			return "", err
+			return "", fmt.Errorf("Property node search error: %v", err)
 		}
 		if len(nodes) > 0 {
 			valueNodes, err := nodes[0].Search("Value")
 			if err != nil {
-				glog.Error("Searching for Value as error:", err)
-				return "", err
+				return "", fmt.Errorf("Searching for Value error: %v", err)
 			}
 			apiKey = valueNodes[0].InnerHtml()
 			break
@@ -172,6 +158,7 @@ func findAndSaveApiKey(confDir string) (string, error) {
 	}
 
 	if apiKey == "" {
+		// If apiKey not found, prompt user for API key
 		for apiKey == "" {
 			apiKey = promptUserForAPIKey()
 
@@ -182,51 +169,49 @@ func findAndSaveApiKey(confDir string) (string, error) {
 			}
 		}
 
-		propertiesNode := propertiesNodes[0]
-		propertiesNode.AddChild(fmt.Sprintf(`
+		// Add API key to XML document
+		propertiesNodes[0].AddChild(fmt.Sprintf(`
 			<Property>
 				<Name>livepeer.org/api-key</Name>
 				<Value>%s</Value>
 				<Type>String</Type>
 			</Property>
 		`, apiKey))
-		// TODO : FIX ... this probably doesn't write the comlete file :(
-		err = ioutil.WriteFile(confDir, []byte(doc.String()), 0644)
+
+		err = ioutil.WriteFile(serverFilePath, []byte(doc.String()), 0644)
 		if err != nil {
-			glog.Error("failed to write API key to Server.xml file, error: ", err)
+			return "", fmt.Errorf("Failed to write API key to Server.xml file, error: %v", err)
 		}
 	}
 
+	glog.Error("API KEY: ", apiKey)
+
 	return apiKey, nil
+}
 
-	// glog.Error("Doc:", doc.String())
-	// glog.Error("Search stuff:", stuff)
-	// if err != nil {
-	// 	glog.Error("Parsing has error:", err)
-	// 	return "", err
-	// }
+func createSearchableXMLDocument(filePath string) (*xml.XmlDocument, error) {
+	xmlFile, err := os.Open(filePath)
+	if err != nil {
+		glog.Error("Could not open xml file, error: ", err)
+		return nil, err
+	}
 
-	// // Check for API key in server.xml
-	// var key string
-	// var server Server
-	// // TODO: UNMARSHALING NOT WORKING PROPERLY
-	// err = xml.Unmarshal(serverBytes, &server)
-	// if err != nil {
-	// 	glog.Error("Could not unmarshal xml bytes, err: ", err)
-	// 	return "", err
-	// }
+	fmt.Print("Successfully Opened XML document: ", filePath)
+	defer xmlFile.Close()
 
-	// for i := 0; i < len(server.Properties); i++ {
-	// 	glog.Error("HERE ARE PROPERTIES: ", server.Properties[i])
-	// 	if strings.Contains("livepeer.org/api-key", server.Properties[i].Name) {
-	// 		key = server.Properties[i].Value
-	// 		break
-	// 	}
-	// }
+	// Open xml file as a byte array
+	serverBytes, err := ioutil.ReadAll(xmlFile)
+	if err != nil {
+		return nil, fmt.Errorf("Could not read opened xml as a byte array, error: %v", err)
+	}
 
-	// // If no API key in xml file, prompt user for key in CLI
+	// Create searchable xml document
+	doc, err := gokogiri.ParseXml(serverBytes)
+	if err != nil {
+		return nil, fmt.Errorf("Parsing error when creating searchable XML document: %v", err)
+	}
 
-	// return xmlKey, nil
+	return doc, nil
 }
 
 func promptUserForAPIKey() string {
@@ -238,66 +223,65 @@ func promptUserForAPIKey() string {
 
 func downloadLatestJarFile(channel string, wowzaDir string) error {
 	jsonVersionLink := fmt.Sprintf("https://build.livepeer.live/LivepeerWowza/%s.json", channel)
-	jsonLocalFilePath := fmt.Sprintf("lib/%s.json", channel)
 
 	// Download json info on latest LivepeerWoza JAR file
-	if err := downloadFile(jsonLocalFilePath, jsonVersionLink); err != nil {
-		return err
-	}
-
-	// Open json info on latest LivepeerWoza JAR file
-	latestFile, err := os.Open(jsonLocalFilePath)
+	latestURL, err := downloadVersion(jsonVersionLink)
 	if err != nil {
-		return err
-	}
-
-	// Read json info on latest LivepeerWoza JAR file
-	versionBytes, err := ioutil.ReadAll(latestFile)
-	if err != nil {
-		return err
-	}
-
-	var version []Version
-	err = json.Unmarshal(versionBytes, &version)
-	if err != nil {
-		return err
+		return fmt.Errorf("Download json info on latest .jar file error: %v", err)
 	}
 
 	// Dowload latest LivepeerWowza JAR file
-	if err := downloadFile(wowzaDir, version[0].url); err != nil {
-		return err
+	if err := downloadFile(wowzaDir, latestURL); err != nil {
+		return fmt.Errorf("Download latest .jar file error: %v", err)
 	}
 
 	return nil
 }
 
-// downloadFile will download a url to a local file. It's efficient because it will
-// write as it downloads and not load the whole file into memory.
-func downloadFile(path string, url string) error {
-	// Create directory
-	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
-		glog.Error("error: ", err)
-		return err
-	}
-
-	// Get the data
+func downloadVersion(url string) (string, error) {
+	// Get data from URL
 	resp, err := http.Get(url)
-	if err != nil {
-		glog.Error("error: ", err)
-		return err
+	if err != nil || resp.StatusCode != 200 {
+		return "", fmt.Errorf("http.Get error: %v ", err)
 	}
 	defer resp.Body.Close()
 
-	// Create file
-	out, err := os.Create(path)
+	// Read json info on latest LivepeerWoza JAR file
+	versionBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		glog.Error("error: ", err)
-		return err
+		return "", fmt.Errorf("File ReadAll error: %v", err)
+	}
+
+	var latest version
+	err = json.Unmarshal(versionBytes, &latest)
+	if err != nil {
+		return "", fmt.Errorf("Json unmarshal error: %v", err)
+	}
+
+	return latest.URL, err
+}
+
+// downloadFile will download a url to a local file. It's efficient because it will
+// write as it downloads and not load the whole file into memory.
+func downloadFile(dir string, url string) error {
+	// Get data from URL
+	resp, err := http.Get(url)
+	if err != nil || resp.StatusCode != 200 {
+		glog.Error("Http.Get error code: ", resp.StatusCode)
+		return fmt.Errorf("http.Get error: %v ", err)
+	}
+	defer resp.Body.Close()
+
+	// Insert Wowza .jar file into Wowza directory
+	filePath := filepath.Join(dir, filepath.Base(url))
+	out, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("os.Create error: %v ", err)
 	}
 	defer out.Close()
 
 	// Change file permissions
-	err = out.Chmod(755)
+	err = out.Chmod(0777)
 
 	return err
 }
