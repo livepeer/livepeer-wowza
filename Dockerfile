@@ -3,7 +3,7 @@ RUN apt-get update && apt-get install -y openjdk-8-jdk-headless curl
 # Ubuntu ships Ant with a Java 11 dependency, so we grab it manually.
 WORKDIR /ant
 ENV PATH $PATH:/ant/apache-ant-1.10.6/bin
-RUN curl -o ant.tar.gz https://apache.org/dist/ant/binaries/apache-ant-1.10.6-bin.tar.gz && tar xzvf ant.tar.gz
+RUN curl -o ant.tar.gz https://apache.org/dist/ant/binaries/apache-ant-1.10.6-bin.tar.gz && tar xzf ant.tar.gz
 WORKDIR /build/wowza
 RUN mkdir /build/bin
 ADD build.xml build.xml
@@ -11,7 +11,10 @@ ENV PATH $PATH:/usr/local/WowzaStreamingEngine/jre/bin
 ADD build-trust-store.sh build-trust-store.sh
 RUN ./build-trust-store.sh /usr/local/WowzaStreamingEngine/jre
 RUN cp /usr/local/WowzaStreamingEngine/jre/jre/lib/security/cacerts ./livepeer_cacerts
+ARG version
+ENV VERSION=$version
 ADD src src
+RUN sed -i "s/UNKNOWN_VERSION/${VERSION}/g" src/org/livepeer/LivepeerWowza/LivepeerVersion.java
 RUN mkdir bin && ant -lib /usr/local/WowzaStreamingEngine/lib -Dwowza.lib.dir=/usr/local/WowzaStreamingEngine/lib
 
 FROM wowzamedia/wowza-streaming-engine-linux@sha256:904d95965cfdbec477a81374fcd22dfc48db1972e690dacb80d2114a8d597f95

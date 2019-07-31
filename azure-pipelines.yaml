@@ -1,0 +1,22 @@
+jobs:
+  - job: build_livepeer
+
+    pool:
+      vmImage: "ubuntu-16.04"
+
+    # variables:
+    #   DOCKER_CLI_EXPERIMENTAL: enabled
+
+    steps:
+      - checkout: self
+      - bash: |-
+          set -e
+          docker build -t livepeer-wowza --build-arg=version=$(git describe --always --tags --dirty) .
+          docker create --name livepeer-wowza livepeer-wowza /bin/bash
+          docker cp livepeer-wowza:/usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar ./LivepeerWowza.jar
+          export BRANCH=$(Build.SourceBranchName)
+          ./hack/upload-build.sh
+        env:
+          GCLOUD_KEY: $(GCLOUD_KEY)
+          GCLOUD_SECRET: $(GCLOUD_SECRET)
+          DISCORD_URL: $(DISCORD_URL)

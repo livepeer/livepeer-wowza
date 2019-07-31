@@ -6,8 +6,9 @@
 set -e
 
 DEV_USER="$1"
+VERSION="$(git describe --always --tags --dirty)"
 
-docker build -t iameli/livepeer-wowza:$DEV_USER .
+docker build -t iameli/livepeer-wowza:$DEV_USER --build-arg=version=${VERSION} .
 docker push iameli/livepeer-wowza:$DEV_USER
 kubectl delete pod -l app=$DEV_USER --wait
 until kubectl logs --tail=0 -c wowza deployment/$DEV_USER; do
