@@ -1,29 +1,12 @@
 package org.livepeer.LivepeerWowza;
 
+import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.stream.*;
 import com.wowza.wms.stream.livetranscoder.*;
-import com.wowza.wms.transcoder.encoder.TranscoderEncoderStreamInfo;
 import com.wowza.wms.module.*;
-import com.wowza.wms.pushpublish.protocol.rtmp.IPushPublishRTMPNotify;
-import com.wowza.wms.pushpublish.protocol.rtmp.PushPublishRTMP;
-import com.wowza.wms.pushpublish.protocol.rtmp.PushPublishRTMPNetConnectionSession;
-import com.wowza.wms.request.RequestFunction;
-import com.wowza.wms.rest.WMSClientSecurity;
-import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
 
-import java.io.OutputStream;
 import java.util.*;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.restlet.ext.jackson.JacksonRepresentation;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wowza.wms.amf.AMFDataList;
 import com.wowza.wms.amf.AMFPacket;
 import com.wowza.wms.application.*;
 import com.wowza.wms.media.model.MediaCodecInfoAudio;
@@ -54,17 +37,21 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 		public void onPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
 			try {
-				System.out.println("LIVEPEER onPublish start");
+				WMSLogger logger = getLogger();
+				logger.info("LivepeerWowza initalizing stream " + streamName);
 				String vHostName = _appInstance.getVHost().getName();
 				String applicationName = _appInstance.getApplication().getName();
-				String livepeerId = livepeer.createWowzaFromApplication(vHostName, applicationName).getId();
-				System.out.println("Got LivepeerID="+livepeerId);
+				String streamId = livepeer.createStreamFromApplication(vHostName, applicationName).getId();
+				System.out.println("livepeerStreamId="+streamId);
 				List<LivepeerAPI.LivepeerAPIResourceBroadcaster> broadcasters = livepeer.getBroadcasters();
 				Random rand = new Random();
 				LivepeerAPI.LivepeerAPIResourceBroadcaster broadcaster = broadcasters.get(rand.nextInt(broadcasters.size()));
-
 				System.out.println("LIVEPEER: picked broadcaster " + broadcaster.getAddress());
-				PushPublishHTTPCupertinoLivepeerHandler http = new PushPublishHTTPCupertinoLivepeerHandler(broadcaster.getAddress());
+
+				String ingestPath = broadcaster.getAddress() + "/live/" + streamId;
+				logger.info("livepeer ingest path: " + ingestPath);
+
+				PushPublishHTTPCupertinoLivepeerHandler http = new PushPublishHTTPCupertinoLivepeerHandler(ingestPath);
 
 				http.setHttpClient(livepeer.getHttpClient());
 				http.setAppInstance(_appInstance);

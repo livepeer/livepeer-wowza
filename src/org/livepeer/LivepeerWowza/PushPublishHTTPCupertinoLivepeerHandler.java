@@ -69,13 +69,11 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
     try {
       PacketFragmentList list = mediaSegment.getFragmentList();
       if (list != null && list.size() != 0) {
-        url = httpAddress + "/" + getDestinationPath() + "/" + getSegmentUri(mediaSegment);
+        url = httpAddress + "/" + getSegmentUri(mediaSegment);
         LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
         HttpPut req = new HttpPut(url);
         req.setEntity(entity);
         HttpResponse res = httpClient.execute(req);
-
-
         int status = res.getStatusLine().getStatusCode();
         size = entity.getSize();
         if (status < 200 || status >= 300)
@@ -91,13 +89,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 
   @Override
   public String getDestionationLogData() {
-    return "{\"" + httpAddress + "/" + getDestinationPath() + "\"}";
-  }
-
-  private String getDestinationPath() {
-    if (!backup)
-      return basePath + getDstStreamName();
-    return basePath + getDstStreamName() + "-b";
+    return "{\"" + httpAddress + "/" + "\"}";
   }
 
 

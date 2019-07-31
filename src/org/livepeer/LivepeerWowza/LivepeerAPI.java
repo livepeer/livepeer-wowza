@@ -3,6 +3,7 @@ package org.livepeer.LivepeerWowza;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
@@ -54,6 +55,7 @@ public class LivepeerAPI {
             .setUserAgent("LivepeerWowza/" + LivepeerVersion.VERSION)
             .build();
     mapper = new ObjectMapper();
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
   public HttpClient getHttpClient() {
@@ -80,11 +82,13 @@ public class LivepeerAPI {
   }
 
   private HttpResponse _get(String path) throws IOException {
+    log("GET " + LIVEPEER_API_URL + path);
     HttpGet getMethod = new HttpGet(LIVEPEER_API_URL + path);
     return httpClient.execute(getMethod);
   }
 
   private HttpResponse _post(String path, Object body) throws IOException {
+    log("POST " + LIVEPEER_API_URL + path);
     String json = mapper.writeValueAsString(body);
     StringEntity requestEntity = new StringEntity(json, ContentType.APPLICATION_JSON);
     HttpPost postMethod = new HttpPost(LIVEPEER_API_URL + path);
@@ -100,9 +104,9 @@ public class LivepeerAPI {
    * @return wowza resource
    * @throws IOException something went wrong talking to the Livepeer API
    */
-  public LivepeerAPIResourceStream createWowzaFromApplication(String vhost, String application) throws IOException {
+  public LivepeerAPIResourceStream createStreamFromApplication(String vhost, String application) throws IOException {
     LivepeerAPIResourceStream body = new LivepeerAPIResourceStream(vhost, application);
-    HttpResponse response = _post("/wowza", body);
+    HttpResponse response = _post("/stream", body);
     LivepeerAPIResourceStream info = mapper.readValue(response.getEntity().getContent(), LivepeerAPIResourceStream.class);
     return info;
   }

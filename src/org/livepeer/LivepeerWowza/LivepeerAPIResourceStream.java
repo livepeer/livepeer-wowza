@@ -36,23 +36,35 @@ public class LivepeerAPIResourceStream {
 
     TranscoderAppConfig transcoderAppConfig = new TranscoderAppConfig(vhost, application);
     transcoderAppConfig.loadObject();
+    wowza.setTranscoderAppConfig(transcoderAppConfig);
 
     for (ShortObject t : transcoderAppConfig.getTemplates().getTemplates()) {
       TranscoderTemplateAppConfig ttac = new TranscoderTemplateAppConfig(vhost, application, t.getId());
       ttac.loadObject();
-      transcoderTemplateAppConfig.put(t.getId(), ttac);
+      wowza.getTranscoderTemplateAppConfig().put(t.getId(), ttac);
     }
-    ObjectMapper mapper = new ObjectMapper();
   }
 
+  /**
+   * Get the id of this stream
+   * @return id of the stream
+   */
   public String getId() {
     return id;
   }
 
+  /**
+   * Set the id of the stream
+   * @param _id
+   */
   public void setId(String _id) {
     id = _id;
   }
 
+  /**
+   * Class represending the "wowza" subfield. This probably could have been a ShortObject or something
+   * but this works fine.
+   */
   @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
   public class LivepeerAPIResourceStreamWowza {
     private Map<String, TranscoderTemplateAppConfig> transcoderTemplateAppConfig = new HashMap<>();
