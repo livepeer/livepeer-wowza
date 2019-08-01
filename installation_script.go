@@ -33,7 +33,7 @@ func main() {
 	// Set wowza default directory appropriate for each operating system
 	if *wowzaDir == "" {
 		if strings.Contains(runtime.GOOS, "windows") {
-			*wowzaDir = "/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.7/  "
+			*wowzaDir = "/Program Files (x86)/Wowza Media Systems/Wowza Streaming Engine 4.7.7/"
 			fmt.Println("Running on a Windows operating system")
 		}
 		if strings.Contains(runtime.GOOS, "linux") {
@@ -103,7 +103,6 @@ func findAndSaveAPIKey(serverFilePath string, apiKey string) (string, error) {
 			apiKey = valueNodes[0].InnerHtml()
 			fmt.Printf("Livepeer API key in Server.XML: %s\n", apiKey)
 			return apiKey, nil
-			break
 		}
 	}
 
@@ -219,7 +218,7 @@ func downloadFile(dir string, url string) error {
 	defer out.Close()
 
 	// Change file permissions
-	err = out.Chmod(0777)
+	err = out.Chmod(0755)
 
 	// Get data from URL
 	resp, err := http.Get(url)
