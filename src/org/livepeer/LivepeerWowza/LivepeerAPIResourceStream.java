@@ -128,10 +128,7 @@ public class LivepeerAPIResourceStream {
         e.printStackTrace();
         throw new RuntimeException(e);
       }
-      StreamFileAp
       System.out.println("LIVEPEER created streamFile " + renditionName);
-      StreamFileAppAction streamFileAction = new StreamFileAppAction();
-      StreamFileAction
     }
   }
 
