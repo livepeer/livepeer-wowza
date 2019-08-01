@@ -6,7 +6,9 @@ import com.wowza.wms.rest.ShortObject;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderTemplateAppConfig;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -16,7 +18,8 @@ import java.util.Map;
 public class LivepeerAPIResourceStream {
   LivepeerAPIResourceStreamWowza wowza = new LivepeerAPIResourceStreamWowza();
   private String id;
-
+  private List<String> presets = new ArrayList<String>();
+  private Map<String, String> renditions = new HashMap<String, String>();
 
   /**
    * Create an empty API Resource. Mostly used by the JSON serializer when GETing objects
@@ -59,6 +62,22 @@ public class LivepeerAPIResourceStream {
    */
   public void setId(String _id) {
     id = _id;
+  }
+
+  public List<String> getPresets() {
+    return presets;
+  }
+
+  public void setPresets(List<String> presets) {
+    this.presets = presets;
+  }
+
+  public Map<String, String> getRenditions() {
+    return renditions;
+  }
+
+  public void setRenditions(Map<String, String> renditions) {
+    this.renditions = renditions;
   }
 
   /**
