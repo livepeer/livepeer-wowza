@@ -41,14 +41,15 @@ public class ModuleLivepeerWowza extends ModuleBase {
 				logger.info("LivepeerWowza initalizing stream " + streamName);
 				String vHostName = _appInstance.getVHost().getName();
 				String applicationName = _appInstance.getApplication().getName();
-				String streamId = livepeer.createStreamFromApplication(vHostName, applicationName).getId();
-				System.out.println("livepeerStreamId="+streamId);
+				LivepeerAPIResourceStream livepeerStream = livepeer.createStreamFromApplication(vHostName, applicationName);
+				System.out.println("livepeerStreamId="+livepeerStream.getId());
 				List<LivepeerAPI.LivepeerAPIResourceBroadcaster> broadcasters = livepeer.getBroadcasters();
 				Random rand = new Random();
 				LivepeerAPI.LivepeerAPIResourceBroadcaster broadcaster = broadcasters.get(rand.nextInt(broadcasters.size()));
+				broadcaster.setAddress(broadcaster.getAddress().replace("https", "http"));
 				System.out.println("LIVEPEER: picked broadcaster " + broadcaster.getAddress());
 
-				String ingestPath = broadcaster.getAddress() + "/live/" + streamId;
+				String ingestPath = broadcaster.getAddress() + "/live/" + livepeerStream.getId();
 				logger.info("livepeer ingest path: " + ingestPath);
 
 				PushPublishHTTPCupertinoLivepeerHandler http = new PushPublishHTTPCupertinoLivepeerHandler(ingestPath);
@@ -62,9 +63,12 @@ public class ModuleLivepeerWowza extends ModuleBase {
 						new HashMap<String, String>(), null, true);
 				http.connect();
 
+				livepeerStream.ensureStreamFiles(streamName, broadcaster.getAddress(), vHostName, applicationName);
+
 				System.out.println("LIVEPEER onPublish end");
 
 			} catch (Exception e) {
+				e.printStackTrace();
 				System.out.println("LIVEPEER HTTP: " + e);
 			}
 		}

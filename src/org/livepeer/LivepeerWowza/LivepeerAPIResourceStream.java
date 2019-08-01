@@ -2,20 +2,24 @@ package org.livepeer.LivepeerWowza;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wowza.wms.rest.ConfigBase;
 import com.wowza.wms.rest.ShortObject;
+import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFileAppAction;
+import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFileAppConfig;
+import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFileAppConfigAdv;
+import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFilesAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderTemplateAppConfig;
+import com.wowza.wms.rest.vhosts.streamfiles.StreamFileAction;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Representation of LivepeerAPI's "/stream" object
  */
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class LivepeerAPIResourceStream {
+  public final static String LIVEPEER_PREFIX = "livepeer_";
   LivepeerAPIResourceStreamWowza wowza = new LivepeerAPIResourceStreamWowza();
   private String id;
   private List<String> presets = new ArrayList<String>();
@@ -78,6 +82,57 @@ public class LivepeerAPIResourceStream {
 
   public void setRenditions(Map<String, String> renditions) {
     this.renditions = renditions;
+  }
+
+  /**
+   * Sync this server's Stream Files to match what the server says
+   */
+  public void ensureStreamFiles(String streamName, String broadcaster, String vhost, String application) {
+    StreamFilesAppConfig streamFiles = new StreamFilesAppConfig(vhost, application);
+    streamFiles.loadObject();
+    Map<String, String> streamFilesMustExist = new HashMap<>();
+    for (String renditionName : this.getRenditions().keySet()) {
+      streamFilesMustExist.put(streamName + "_" + renditionName, broadcaster + this.getRenditions().get(renditionName));
+    }
+    System.out.println("LIVEPEER ensuring these renditions exist: " + streamFilesMustExist);
+    for (ShortObject streamFileListItem : streamFiles.getStreamFiles()) {
+      String id = streamFileListItem.getId();
+      StreamFileAppConfig streamFile = new StreamFileAppConfig(vhost, application, id);
+      streamFile.loadObject();
+      String streamFileName = streamFile.getStreamfileName();
+      if (streamFilesMustExist.containsKey(streamFileName)) {
+        if (streamFilesMustExist.get(streamFile.getStreamfileName()) == streamFile.getUri()) {
+          System.out.println("LIVEPEER found good existing streamFile: " + streamFile.getStreamfileName());
+          streamFilesMustExist.remove(streamFileName);
+        }
+        else {
+          System.out.println("LIVEPEER found stale streamFile, deleting: " + streamFile.getStreamfileName());
+          streamFile.delete();
+        }
+      }
+
+    }
+    System.out.println("LIVEPEER creating stream files for renditions: " + streamFilesMustExist);
+    for (String renditionName : streamFilesMustExist.keySet()) {
+      StreamFileAppConfig streamFile = new StreamFileAppConfig();
+      streamFile.setVhostName(vhost);
+      streamFile.setAppName(application);
+      streamFile.setStreamfileName(renditionName);
+      streamFile.setUri(streamFilesMustExist.get(renditionName));
+      streamFile.addToStringKeyMap("streamfileName", renditionName);
+      streamFile.addToStringKeyMap("appName", application);
+      streamFile.addToStringKeyMap("vhostName", vhost);
+      try {
+        streamFile.saveNewObject();
+      } catch (ConfigBase.ConfigBaseException e) {
+        e.printStackTrace();
+        throw new RuntimeException(e);
+      }
+      StreamFileAp
+      System.out.println("LIVEPEER created streamFile " + renditionName);
+      StreamFileAppAction streamFileAction = new StreamFileAppAction();
+      StreamFileAction
+    }
   }
 
   /**
