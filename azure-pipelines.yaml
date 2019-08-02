@@ -3,13 +3,13 @@
 jobs:
   - job: build_installer
     strategy:
-    matrix:
-      linux:
-        imageName: 'ubuntu-16.04'
-      mac:
-        imageName: 'macos-10.13'
-      windows:
-        imageName: 'vs2017-win2016'
+      matrix:
+        linux:
+          imageName: 'ubuntu-16.04'
+        mac:
+          imageName: 'macos-10.13'
+        windows:
+          imageName: 'vs2017-win2016'
     steps:
       # Linux
       - condition: eq( variables['Agent.OS'], 'Linux' )
