@@ -36,7 +36,7 @@ jobs:
         displayName: install libraries (linux)
 
       # macOS
-      - bash: brew install libxml2
+      - bash: brew install libxml2 pkg-config
         condition: eq( variables['Agent.OS'], 'Darwin' )
         displayName: install libraries (macos)
 
