@@ -30,6 +30,8 @@ jobs:
         displayName: install libraries (windows)
 
       - bash: |
+          set -e
+          go get .
           go build installation_script.go
 
   - job: build_livepeer_wowza
