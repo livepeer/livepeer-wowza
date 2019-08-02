@@ -13,7 +13,7 @@ jobs:
     steps:
       # Linux
       - bash: |
-          apt-get update && apt-get install -y libxml2-dev libonig-dev
+          sudo apt-get update && sudo apt-get install -y libxml2-dev libonig-dev
         condition: eq( variables['Agent.OS'], 'Linux' )
         displayName: install libraries (linux)
 
