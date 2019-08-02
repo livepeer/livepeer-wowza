@@ -5,11 +5,13 @@ jobs:
     strategy:
       matrix:
         linux:
-          vmImage: 'ubuntu-16.04'
+          imageName: 'ubuntu-16.04'
         mac:
-          vmImage: 'macos-10.13'
+          imageName: 'macos-10.13'
         windows:
-          vmImage: 'vs2017-win2016'
+          imageName: 'vs2017-win2016'
+    pool:
+      vmImage: $(imageName)
     steps:
       # Linux
       - bash: |
