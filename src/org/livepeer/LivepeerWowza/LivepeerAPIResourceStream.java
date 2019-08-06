@@ -107,7 +107,7 @@ public class LivepeerAPIResourceStream {
         }
         else {
           System.out.println("LIVEPEER found stale streamFile, deleting: " + streamFile.getStreamfileName());
-          streamFile.delete();
+          streamFile.deleteObject();
         }
       }
 

@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import com.wowza.util.IPacketFragment;
 import com.wowza.util.PacketFragmentList;
+import com.wowza.wms.httpstreamer.cupertinostreaming.livestreampacketizer.LiveStreamPacketizerCupertinoChunk;
 import com.wowza.wms.manifest.model.m3u8.MediaSegmentModel;
 import com.wowza.wms.manifest.model.m3u8.PlaylistModel;
 import com.wowza.wms.pushpublish.protocol.cupertino.PushPublishHTTPCupertino;
@@ -68,11 +69,14 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
     int size = 0;
     try {
       PacketFragmentList list = mediaSegment.getFragmentList();
+			LiveStreamPacketizerCupertinoChunk chunkInfo = (LiveStreamPacketizerCupertinoChunk) mediaSegment.getChunkInfoCupertino();
       if (list != null && list.size() != 0) {
         url = httpAddress + "/" + getSegmentUri(mediaSegment);
         LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
         HttpPut req = new HttpPut(url);
         req.setEntity(entity);
+        req.setHeader("Content-Duration", "" + chunkInfo.getDuration());
+        System.out.println("LIVEPEEER Content-Duration=" + chunkInfo.getDuration());
         HttpResponse res = httpClient.execute(req);
         int status = res.getStatusLine().getStatusCode();
         size = entity.getSize();
