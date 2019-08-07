@@ -175,8 +175,10 @@ func downloadLatestJarFile(channel string, wowzaDir string) error {
 	if err != nil {
 		return fmt.Errorf("Download json file error: %v", err)
 	}
+
 	// Dowload latest LivepeerWowza JAR file
-	if err := downloadFile(wowzaDir, latestURL); err != nil {
+	jarFilePath := filepath.Join(wowzaDir, "lib/")
+	if err := downloadFile(jarFilePath, latestURL); err != nil {
 		return fmt.Errorf("Download latest .jar file error: %v", err)
 	}
 
