@@ -1,6 +1,7 @@
 package org.livepeer.LivepeerWowza;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wowza.wms.rest.ConfigBase;
 import com.wowza.wms.rest.ShortObject;
@@ -28,6 +29,8 @@ public class LivepeerAPIResourceStream {
   private String id;
   private List<String> presets = new ArrayList<String>();
   private Map<String, String> renditions = new HashMap<String, String>();
+  @JsonIgnore
+  private LivepeerAPI api;
 
   /**
    * Create an empty API Resource. Mostly used by the JSON serializer when GETing objects
@@ -54,6 +57,10 @@ public class LivepeerAPIResourceStream {
       ttac.loadObject();
       wowza.getTranscoderTemplateAppConfig().put(t.getId(), ttac);
     }
+  }
+
+  public void setApi(LivepeerAPI api) {
+    this.api = api;
   }
 
   /**
@@ -146,13 +153,11 @@ public class LivepeerAPIResourceStream {
       params.add(new BasicNameValuePair("appType", "live"));
       String queryParam = URLEncodedUtils.format(params, "UTF-8");
       try {
-        WMSResponse response = streamFile.connectAction(queryParam);
-        System.out.println("LIVEPEER Message=" + response.getMessage());
-        System.out.println("LIVEPEER Data=" + response.getData());
-        System.out.println("LIVEPEER query param map: " + streamFile.getQueryParamMap());
+        api.addRunningStreamFile(renditionName + ".stream");
+        streamFile.connectAction(queryParam);
       }
       catch (Exception e) {
-        System.out.println("LIVEPEER error");
+        System.out.println("LIVEPEER error starting streamfile");
         e.printStackTrace();
         System.out.println("LIVEPEER query param map: " + streamFile.getQueryParamMap());
       }

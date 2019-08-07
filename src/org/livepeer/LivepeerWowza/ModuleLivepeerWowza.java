@@ -5,7 +5,7 @@ import com.wowza.wms.stream.*;
 import com.wowza.wms.stream.livetranscoder.*;
 import com.wowza.wms.module.*;
 
-import java.util.*; 
+import java.util.*;
 
 import com.wowza.wms.amf.AMFPacket;
 import com.wowza.wms.application.*;
@@ -115,11 +115,8 @@ public class ModuleLivepeerWowza extends ModuleBase {
 	}
 
 	public void onStreamCreate(IMediaStream stream) {
-		// TODO FIXME this was intended to ignore our transcoded streams to avoid an
-		// infinite loop. instead, it ignores all local streams, including stream files
-		// and such. need to be more careful and only ignore transcoded renditions.
-		if (stream.getClientId() == -1) {
-			getLogger().info("Ignoring local stream");
+		if (livepeer.isRunningStreamFile(stream.getName())) {
+			getLogger().info("Skipping already-transcoded stream: " + stream.getName());
 			return;
 		}
 

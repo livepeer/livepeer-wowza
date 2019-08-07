@@ -31,6 +31,7 @@ public class LivepeerAPI {
   private static String LIVEPEER_API_URL = "https://livepeer.live/api";
   private static LivepeerAPI _instance;
   private static ConcurrentHashMap<IApplicationInstance, LivepeerAPI> apiInstances = new ConcurrentHashMap<>();
+  private ConcurrentHashMap<String, Boolean> runningStreamFiles = new ConcurrentHashMap<>();
   private CloseableHttpClient httpClient;
   private ObjectMapper mapper;
   private WMSLogger logger;
@@ -82,6 +83,14 @@ public class LivepeerAPI {
     }
   }
 
+  public boolean isRunningStreamFile(String name) {
+    return runningStreamFiles.containsKey(name);
+  }
+
+  public void addRunningStreamFile(String name) {
+    runningStreamFiles.put(name, true);
+  }
+
   private HttpResponse _execute(HttpGet req) throws IOException {
     log("" + req.getRequestLine());
     HttpResponse res = httpClient.execute(req);
@@ -114,8 +123,10 @@ public class LivepeerAPI {
    */
   public LivepeerAPIResourceStream createStreamFromApplication(String vhost, String application) throws IOException {
     LivepeerAPIResourceStream body = new LivepeerAPIResourceStream(vhost, application);
+    body.setApi(this);
     HttpResponse response = _post("/stream", body);
     LivepeerAPIResourceStream info = mapper.readValue(response.getEntity().getContent(), LivepeerAPIResourceStream.class);
+    info.setApi(this);
     return info;
   }
 
