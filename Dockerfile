@@ -17,6 +17,14 @@ ADD src src
 RUN sed -i "s/UNKNOWN_VERSION/${VERSION}/g" src/org/livepeer/LivepeerWowza/LivepeerVersion.java
 RUN mkdir bin && ant -lib /usr/local/WowzaStreamingEngine/lib -Dwowza.lib.dir=/usr/local/WowzaStreamingEngine/lib
 
+FROM golang:1.12-buster as installer
+RUN apt-get update && apt-get install -y libxml2-dev libonig-dev
+WORKDIR /go/src/github.com/livepeer/livepeer-wowza
+ADD installation_script.go installation_script.go
+RUN go get .
+RUN go build -o install_livepeer_wowza installation_script.go
+RUN tar czvf install_livepeer_wowza.linux.tar.gz install_livepeer_wowza
+
 FROM wowzamedia/wowza-streaming-engine-linux@sha256:904d95965cfdbec477a81374fcd22dfc48db1972e690dacb80d2114a8d597f95
 
 ADD etc/WowzaStreamingEngine.conf /etc/supervisor/conf.d/WowzaStreamingEngine.conf
@@ -24,5 +32,6 @@ ADD etc/WowzaStreamingEngineManager.conf /etc/supervisor/conf.d/WowzaStreamingEn
 ADD etc/Server.xml /usr/local/WowzaStreamingEngine/conf/Server.xml
 ADD etc/Application.xml /usr/local/WowzaStreamingEngine/conf/live/Application.xml
 
+COPY --from=installer /go/src/github.com/livepeer/livepeer-wowza/install_livepeer_wowza.linux.tar.gz /usr/local/install_livepeer_wowza.linux.tar.gz
 COPY --from=builder /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar
 RUN chown wowza:wowza /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar && chmod 775 /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar

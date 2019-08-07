@@ -8,8 +8,8 @@ jobs:
           imageName: 'ubuntu-16.04'
         mac:
           imageName: 'macos-10.13'
-        windows:
-          imageName: 'vs2017-win2016'
+        # windows:
+        #   imageName: 'vs2017-win2016'
     pool:
       vmImage: $(imageName)
     variables:
@@ -41,9 +41,9 @@ jobs:
         displayName: install libraries (macos)
 
       # Windows
-      - bash: echo 'uh oh'
-        condition: eq( variables['Agent.OS'], 'Windows_NT' )
-        displayName: install libraries (windows)
+      # - bash: echo 'uh oh'
+      #   condition: eq( variables['Agent.OS'], 'Windows_NT' )
+      #   displayName: install libraries (windows)
 
       - bash: |
           set -e
@@ -66,6 +66,7 @@ jobs:
           docker build -t livepeer-wowza --build-arg=version=$(git describe --always --tags --dirty) .
           docker create --name livepeer-wowza livepeer-wowza /bin/bash
           docker cp livepeer-wowza:/usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar ./LivepeerWowza.jar
+          docker cp livepeer-wowza:/usr/local/install_livepeer_wowza.linux.tar.gz ./install_livepeer_wowza.linux.tar.gz
           export BRANCH=$(Build.SourceBranchName)
           ./hack/upload-build.sh
         env:
