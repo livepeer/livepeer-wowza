@@ -53,7 +53,6 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
       }
       outputString += line + "\n";
     }
-    System.out.println(outputString);
     httpResult.setResultType(CupertinoMediaCasterFetchedResult.textType);
     httpResult.setResultString(outputString);
     httpResult.setTimedOut(false);

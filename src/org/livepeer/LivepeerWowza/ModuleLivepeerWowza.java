@@ -46,7 +46,6 @@ public class ModuleLivepeerWowza extends ModuleBase {
 				List<LivepeerAPI.LivepeerAPIResourceBroadcaster> broadcasters = livepeer.getBroadcasters();
 				Random rand = new Random();
 				LivepeerAPI.LivepeerAPIResourceBroadcaster broadcaster = broadcasters.get(rand.nextInt(broadcasters.size()));
-				broadcaster.setAddress(broadcaster.getAddress().replace("https", "http"));
 				System.out.println("LIVEPEER: picked broadcaster " + broadcaster.getAddress());
 
 				String ingestPath = broadcaster.getAddress() + "/live/" + livepeerStream.getId();
