@@ -37,10 +37,11 @@ echo "
   \"version\": \"${version}\",
   \"url\": \"https://$bucket/LivepeerWowza/$BRANCH/$version/LivepeerWowza.jar\"
 }
-" > uploadVersion.json 
+" > uploadVersion.json
 
 doUpload LivepeerWowza.jar "$BRANCH/$version/LivepeerWowza.jar" "application/x-compressed-tar"
+doUpload install_livepeer_wowza.linux.tar.gz "$BRANCH/$version/install_livepeer_wowza.linux.tar.gz" "application/gzip"
 doUpload uploadVersion.json "$BRANCH.json" "application/json"
 
-curl --fail -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"Build succeeded ✅\nBranch: $BRANCH\nLast commit: $(git log -1 --pretty=format:'%s by %an')\nhttps://build.livepeer.live/LivepeerWowza/$BRANCH/$version/LivepeerWowza.jar\"}" $DISCORD_URL 2>/dev/null
+curl --fail -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"Build succeeded ✅\nBranch: $BRANCH\nLast commit: $(git log -1 --pretty=format:'%s by %an')\nhttps://build.livepeer.live/LivepeerWowza/$BRANCH/$version/LivepeerWowza.jar\nhttps://build.livepeer.live/LivepeerWowza/$BRANCH/$version/install_livepeer_wowza.linux.tar.gz\"}" $DISCORD_URL 2>/dev/null
 echo "done"
