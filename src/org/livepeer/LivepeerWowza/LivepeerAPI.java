@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wowza.wms.application.IApplicationInstance;
 import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderTemplateAppConfig;
@@ -23,18 +24,25 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class LivepeerAPI {
 
   private static String LIVEPEER_API_URL = "https://livepeer.live/api";
   private static LivepeerAPI _instance;
+  private static ConcurrentHashMap<IApplicationInstance, LivepeerAPI> apiInstances = new ConcurrentHashMap<>();
   private CloseableHttpClient httpClient;
   private ObjectMapper mapper;
   private WMSLogger logger;
-  public LivepeerAPI() {
+
+  public static LivepeerAPI getApiInstance(IApplicationInstance appInstance) {
+    return apiInstances.get(appInstance);
+  }
+
+  public LivepeerAPI(IApplicationInstance appInstance) {
+    apiInstances.put(appInstance, this);
     httpClient = HttpClients.createDefault();
     // Trust own CA and all self-signed certs
-
     SSLContext sslcontext = null;
     try {
       sslcontext = SSLContexts.custom()

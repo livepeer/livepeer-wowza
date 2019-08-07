@@ -167,6 +167,11 @@
 			</StreamValidator>
 			<!-- Properties defined here will override any properties defined in conf/MediaCasters.xml for any MediaCasters loaded by this applications -->
 			<Properties>
+				<Property>
+					<Name>cupertinoChunkFetchClass</Name>
+					<Value>org.livepeer.LivepeerWowza.LivepeerCupertinoMediaCasterChunkFetch</Value>
+					<Type>String</Type>
+				</Property>
 			</Properties>
 		</MediaCaster>
 		<MediaReader>

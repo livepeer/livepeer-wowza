@@ -5,7 +5,7 @@ import com.wowza.wms.stream.*;
 import com.wowza.wms.stream.livetranscoder.*;
 import com.wowza.wms.module.*;
 
-import java.util.*;
+import java.util.*; 
 
 import com.wowza.wms.amf.AMFPacket;
 import com.wowza.wms.application.*;
@@ -63,7 +63,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 						new HashMap<String, String>(), null, true);
 				http.connect();
 
-				livepeerStream.ensureStreamFiles(streamName, broadcaster.getAddress(), vHostName, applicationName);
+				livepeerStream.ensureStreamFiles(streamName, broadcaster.getAddress(), vHostName, applicationName, _appInstance.getName());
 
 				System.out.println("LIVEPEER onPublish end");
 
@@ -110,7 +110,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 	public void onAppStart(IApplicationInstance appInstance) {
 		System.out.println("LIVEPEER onAppStart");
 		_appInstance = appInstance;
-		livepeer = new LivepeerAPI();
+		livepeer = new LivepeerAPI(appInstance);
 		livepeer.setLogger(getLogger());
 		appInstance.setLiveStreamTranscoderControl(new TranscoderControl());
 	}

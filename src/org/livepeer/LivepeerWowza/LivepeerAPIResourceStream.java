@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wowza.wms.rest.ConfigBase;
 import com.wowza.wms.rest.ShortObject;
+import com.wowza.wms.rest.WMSResponse;
 import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFileAppAction;
 import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFileAppConfig;
 import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFileAppConfigAdv;
@@ -11,6 +12,9 @@ import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFilesAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderTemplateAppConfig;
 import com.wowza.wms.rest.vhosts.streamfiles.StreamFileAction;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 
 import java.util.*;
 
@@ -87,7 +91,7 @@ public class LivepeerAPIResourceStream {
   /**
    * Sync this server's Stream Files to match what the server says
    */
-  public void ensureStreamFiles(String streamName, String broadcaster, String vhost, String application) {
+  public void ensureStreamFiles(String streamName, String broadcaster, String vhost, String application, String appInstance) {
     StreamFilesAppConfig streamFiles = new StreamFilesAppConfig(vhost, application);
     streamFiles.loadObject();
     Map<String, String> streamFilesMustExist = new HashMap<>();
@@ -128,7 +132,30 @@ public class LivepeerAPIResourceStream {
         e.printStackTrace();
         throw new RuntimeException(e);
       }
-      System.out.println("LIVEPEER created streamFile " + renditionName);
+      System.out.println("LIVEPEER created streamFile foo " + renditionName);
+      // This API takes a query string! Fun!
+      List<NameValuePair> params = new ArrayList<>();
+      params.add(new BasicNameValuePair("vhost", vhost));
+      params.add(new BasicNameValuePair("appName", application));
+      params.add(new BasicNameValuePair("appInstance", appInstance));
+      params.add(new BasicNameValuePair("connectAppName", application));
+      params.add(new BasicNameValuePair("connectAppInstance", appInstance));
+      params.add(new BasicNameValuePair("streamfileName", renditionName));
+      params.add(new BasicNameValuePair("mediaCasterType", "applehls"));
+      // This is the only one I'm unsure of...
+      params.add(new BasicNameValuePair("appType", "live"));
+      String queryParam = URLEncodedUtils.format(params, "UTF-8");
+      try {
+        WMSResponse response = streamFile.connectAction(queryParam);
+        System.out.println("LIVEPEER Message=" + response.getMessage());
+        System.out.println("LIVEPEER Data=" + response.getData());
+        System.out.println("LIVEPEER query param map: " + streamFile.getQueryParamMap());
+      }
+      catch (Exception e) {
+        System.out.println("LIVEPEER error");
+        e.printStackTrace();
+        System.out.println("LIVEPEER query param map: " + streamFile.getQueryParamMap());
+      }
     }
   }
 
