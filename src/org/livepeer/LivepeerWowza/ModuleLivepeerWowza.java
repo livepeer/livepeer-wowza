@@ -129,6 +129,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		synchronized (props) {
 			props.put("streamActionNotifier", actionNotify);
 		}
+		_appInstance.getMediaCasterProperties().setProperty("cupertinoChunkFetchClass", "org.livepeer.LivepeerWowza.LivepeerCupertinoMediaCasterChunkFetch");
 
 		stream.addClientListener(actionNotify);
 		getLogger().info("LIVEPEER onStreamCreate[" + stream + "]: clientId:" + stream.getClientId());
