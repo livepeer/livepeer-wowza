@@ -264,7 +264,7 @@ func insertModule(appFilePath string) error {
 
 	// Return if Livepeer module has already been inserted
 	for _, modulesNodes := range modulesNodes {
-		nodes, err := modulesNodes.Search("Module[Name='LivepeerWowza']")
+		nodes, err := modulesNodes.Search("Module[Class='org.livepeer.LivepeerWowza.ModuleLivepeerWowza']")
 		if err != nil {
 			return fmt.Errorf("Modules node search error: %v", err)
 		}
