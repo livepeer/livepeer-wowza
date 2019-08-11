@@ -17,17 +17,18 @@ import java.net.URL;
 
 public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCasterChunkFetch {
   private HttpClient httpClient;
+  private LivepeerAPI livepeer;
 
   @Override
   public void init(IApplicationInstance applicationInstance, CupertinoMediaCasterContext cupertinoMediaCasterContext) {
-    System.out.println("LIVEPEER LivepeerCupertinoMediaCasterChunkFetch init()");
-    LivepeerAPI livepeer = LivepeerAPI.getApiInstance(applicationInstance);
+    livepeer = LivepeerAPI.getApiInstance(applicationInstance);
+    livepeer.log("LivepeerCupertinoMediaCasterChunkFetch init()");
     httpClient = livepeer.getHttpClient();
   }
 
   @Override
   public CupertinoMediaCasterFetchedResult fetchManifest(String path, int timeout, int retries) {
-    System.out.println("LIVEPEER LivepeerCupertinoMediaCasterChunkFetch fetchManifest(" + path + ", " + timeout + ", " + retries + ")");
+    livepeer.log("LivepeerCupertinoMediaCasterChunkFetch fetchManifest(" + path + ", " + timeout + ", " + retries + ")");
     LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
     HttpGet req = new HttpGet(path);
     String responseString = null;
@@ -62,28 +63,34 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
 
   @Override
   public CupertinoMediaCasterFetchedResult fetchBlock(String path, int timeout, int retries) {
-    System.out.println("LIVEPEER LivepeerCupertinoMediaCasterChunkFetch fetchBlock(" + path + ", " + timeout + ", " + retries + ")");
+    livepeer.log(" LivepeerCupertinoMediaCasterChunkFetch fetchBlock(" + path + ", " + timeout + ", " + retries + ")");
     //if not success set to 404
-    HttpGet req = new HttpGet(path);
-    LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
-    String responseString = null;
-    HttpResponse res = null;
-    try {
-      res = httpClient.execute(req);
-    } catch (IOException e) {
-      e.printStackTrace();
+    for (int i = 0; i < retries; i += 1) {
+      try {
+        HttpGet req = new HttpGet(path);
+        LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
+        String responseString = null;
+        HttpResponse res = null;
+        try {
+          res = httpClient.execute(req);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+        httpResult.setResultType(CupertinoMediaCasterFetchedResult.dataType);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+          res.getEntity().writeTo(baos);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+        httpResult.setDataBlock(baos.toByteArray());
+        httpResult.setTimedOut(false);
+        httpResult.setResultCode(200);
+        return httpResult;
+      } catch (IOException e) {
+
+      }
     }
-    httpResult.setResultType(CupertinoMediaCasterFetchedResult.dataType);
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try {
-      res.getEntity().writeTo(baos);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    httpResult.setDataBlock(baos.toByteArray());
-    httpResult.setTimedOut(false);
-    httpResult.setResultCode(200);
-    return httpResult;
 //
 //  data result
 //

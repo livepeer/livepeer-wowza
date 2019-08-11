@@ -82,13 +82,6 @@ public class LivepeerAPI {
     }
   }
 
-  private HttpResponse _execute(HttpGet req) throws IOException {
-    log("" + req.getRequestLine());
-    HttpResponse res = httpClient.execute(req);
-    log("" + res.getStatusLine());
-    return res;
-  }
-
   private HttpResponse _get(String path) throws IOException {
     log("GET " + LIVEPEER_API_URL + path);
     HttpGet getMethod = new HttpGet(LIVEPEER_API_URL + path);
