@@ -241,6 +241,11 @@
 				<Value>${com.wowza.wms.context.VHostConfigHome}/conf/${com.wowza.wms.context.Application}/PushPublishMap.txt</Value>
 				<Type>String</Type>
 			</Property>
+			<Property>
+				<Name>livepeer.org/api-server-url</Name>
+				<Value>http://10.9.168.100:8080/api</Value>
+				<Type>String</Type>
+			</Property>
 		</Properties>
 	</Application>
 </Root>

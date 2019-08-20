@@ -109,8 +109,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 	public void onAppStart(IApplicationInstance appInstance) {
 		System.out.println("LIVEPEER onAppStart");
 		_appInstance = appInstance;
-		livepeer = new LivepeerAPI(appInstance);
-		livepeer.setLogger(getLogger());
+		livepeer = new LivepeerAPI(appInstance, getLogger());
 		appInstance.setLiveStreamTranscoderControl(new TranscoderControl());
 	}
 

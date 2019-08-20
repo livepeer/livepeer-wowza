@@ -6,9 +6,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wowza.wms.application.IApplicationInstance;
+import com.wowza.wms.application.WMSProperties;
 import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderTemplateAppConfig;
+import com.wowza.wms.server.Server;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -28,9 +30,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class LivepeerAPI {
 
-  private static String LIVEPEER_API_URL = "https://livepeer.live/api";
+  public static final String LIVEPEER_PROP_API_SERVER_URL = "livepeer.org/api-server-url";
+  public static final String LIVEPEER_PROP_API_KEY = "livepeer.org/api-key";
+  private static String DEFAULT_LIVEPEER_API_URL = "https://livepeer.live/api";
   private static LivepeerAPI _instance;
   private static ConcurrentHashMap<IApplicationInstance, LivepeerAPI> apiInstances = new ConcurrentHashMap<>();
+  private String livepeerApiUrl;
+  private String livepeerApiKey;
   private CloseableHttpClient httpClient;
   private ObjectMapper mapper;
   private WMSLogger logger;
@@ -39,8 +45,39 @@ public class LivepeerAPI {
     return apiInstances.get(appInstance);
   }
 
-  public LivepeerAPI(IApplicationInstance appInstance) {
+  public LivepeerAPI(IApplicationInstance appInstance, WMSLogger logger) {
+    this.logger = logger;
     apiInstances.put(appInstance, this);
+
+    // Get our configuration options. They may be specified in the server, vhost, or application, and they override
+    // in that order.
+    WMSProperties serverProps = Server.getInstance().getProperties();
+    WMSProperties vHostProps = appInstance.getVHost().getProperties();
+    WMSProperties applicationProps = appInstance.getProperties();
+
+    livepeerApiUrl = DEFAULT_LIVEPEER_API_URL;
+    if (serverProps.getPropertyStr(LIVEPEER_PROP_API_SERVER_URL) != null)  {
+      livepeerApiUrl = serverProps.getPropertyStr(LIVEPEER_PROP_API_SERVER_URL);
+    }
+    if (vHostProps.getPropertyStr(LIVEPEER_PROP_API_SERVER_URL) != null)  {
+      livepeerApiUrl = vHostProps.getPropertyStr(LIVEPEER_PROP_API_SERVER_URL);
+    }
+    if (applicationProps.getPropertyStr(LIVEPEER_PROP_API_SERVER_URL) != null)  {
+      livepeerApiUrl = applicationProps.getPropertyStr(LIVEPEER_PROP_API_SERVER_URL);
+    }
+
+    if (serverProps.getPropertyStr(LIVEPEER_PROP_API_KEY) != null)  {
+      livepeerApiKey = serverProps.getPropertyStr(LIVEPEER_PROP_API_KEY);
+    }
+    if (vHostProps.getPropertyStr(LIVEPEER_PROP_API_KEY) != null)  {
+      livepeerApiKey = vHostProps.getPropertyStr(LIVEPEER_PROP_API_KEY);
+    }
+    if (applicationProps.getPropertyStr(LIVEPEER_PROP_API_KEY) != null)  {
+      livepeerApiKey = applicationProps.getPropertyStr(LIVEPEER_PROP_API_KEY);
+    }
+
+    logger.info("Livepeer API server URL: " + livepeerApiUrl);
+
     httpClient = HttpClients.createDefault();
     // Trust own CA and all self-signed certs
     SSLContext sslcontext = null;
@@ -70,10 +107,6 @@ public class LivepeerAPI {
     return httpClient;
   }
 
-  public void setLogger(WMSLogger _logger) {
-    logger = _logger;
-  }
-
   protected void log(String text) {
     if (this.logger != null) {
       this.logger.info("LivepeerAPI: " + text);
@@ -90,16 +123,16 @@ public class LivepeerAPI {
   }
 
   private HttpResponse _get(String path) throws IOException {
-    log("GET " + LIVEPEER_API_URL + path);
-    HttpGet getMethod = new HttpGet(LIVEPEER_API_URL + path);
+    log("GET " + livepeerApiUrl + path);
+    HttpGet getMethod = new HttpGet(livepeerApiUrl + path);
     return httpClient.execute(getMethod);
   }
 
   private HttpResponse _post(String path, Object body) throws IOException {
-    log("POST " + LIVEPEER_API_URL + path);
+    log("POST " + livepeerApiUrl + path);
     String json = mapper.writeValueAsString(body);
     StringEntity requestEntity = new StringEntity(json, ContentType.APPLICATION_JSON);
-    HttpPost postMethod = new HttpPost(LIVEPEER_API_URL + path);
+    HttpPost postMethod = new HttpPost(livepeerApiUrl + path);
     postMethod.setEntity(requestEntity);
     return httpClient.execute(postMethod);
   }

@@ -104,6 +104,11 @@
     </Transcoder>
     <!-- Properties defined here will be added to the IServer.getProperties() collection -->
     <Properties>
+			<Property>
+				<Name>livepeer.org/api-server-url</Name>
+				<Value>http://server-property.example.com</Value>
+				<Type>String</Type>
+			</Property>
     </Properties>
   </Server>
 </Root>

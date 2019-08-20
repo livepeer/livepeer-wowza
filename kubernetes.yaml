@@ -1,0 +1,73 @@
+# docker run\
+#   -it\
+#   --name [container-name]\
+#   --restart always\
+#   --volume /Users/me/Documents/logs:/usr/local/WowzaStreamingEngine/logs\
+#   --entrypoint \
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wowza
+spec:
+  replicas: 1
+  # Delete all old pods before bringing up new ones
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: wowza
+  template:
+    metadata:
+      labels:
+        app: wowza
+    spec:
+      terminationGracePeriodSeconds: 1
+      containers:
+        - name: wowza
+          resources:
+            requests:
+              memory: "4Gi"
+          image: iameli/livepeer-wowza:wowza
+          imagePullPolicy: Always
+          # This image has no default command, lol
+          command:
+            - /sbin/entrypoint.sh
+          env:
+            - name: WSE_MGR_USER
+              value: livepeer
+            - name: WSE_MGR_PASS
+              value: password
+            - name: WSE_LIC
+              valueFrom:
+                secretKeyRef:
+                  name: wowza
+                  key: license
+
+        - name: ffmpeg
+          image: jrottenberg/ffmpeg:4.1-ubuntu
+          resources:
+            requests:
+              memory: 512Mi
+          command:
+            - tail
+            - -f
+            - /dev/null
+          # command:
+          #   - /bin/bash
+          #   - -c
+          #   - ffmpeg -re -stream_loop -1 -i https://storage.googleapis.com/docs.livepeer.live/bbb_sunflower_1080p_30fps_normal.cgop.flv -c:v copy -c:a copy -f flv rtmp://127.0.0.1:1935/live/bbb
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wowza-rtmp
+spec:
+  type: LoadBalancer
+  selector:
+    app: wowza
+  ports:
+    - protocol: TCP
+      port: 1936
+      targetPort: 1935
