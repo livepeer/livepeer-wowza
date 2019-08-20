@@ -12,7 +12,9 @@ import java.util.UUID;
 
 import com.wowza.util.IPacketFragment;
 import com.wowza.util.PacketFragmentList;
+import com.wowza.wms.application.IApplicationInstance;
 import com.wowza.wms.httpstreamer.cupertinostreaming.livestreampacketizer.LiveStreamPacketizerCupertinoChunk;
+import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.manifest.model.m3u8.MediaSegmentModel;
 import com.wowza.wms.manifest.model.m3u8.PlaylistModel;
 import com.wowza.wms.pushpublish.protocol.cupertino.PushPublishHTTPCupertino;
@@ -27,16 +29,19 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
   protected String basePath = "live/";
   protected String httpAddress;
   protected HttpClient httpClient;
+  protected WMSLogger logger;
 
   boolean backup = false;
   String groupName = null;
   private int connectionTimeout = 5000;
   private int readTimeout = 5000;
 
-  public PushPublishHTTPCupertinoLivepeerHandler(String broadcaster) throws LicensingException {
+  public PushPublishHTTPCupertinoLivepeerHandler(String broadcaster, IApplicationInstance appInstance) throws LicensingException {
     super();
+    LivepeerAPI livepeer = LivepeerAPI.getApiInstance(appInstance);
+    logger = livepeer.getLogger();
     httpAddress = broadcaster;
-    System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
+    logger.info("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
   }
 
   public void setHttpClient(HttpClient client) {
@@ -45,7 +50,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 
   @Override
   public void load(HashMap<String, String> dataMap) {
-    System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler load " + dataMap);
+    logger.info("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler load " + dataMap);
     super.load(dataMap);
   }
 
@@ -76,7 +81,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
         HttpPut req = new HttpPut(url);
         req.setEntity(entity);
         req.setHeader("Content-Duration", "" + chunkInfo.getDuration());
-        System.out.println("LIVEPEEER Content-Duration=" + chunkInfo.getDuration());
+        logger.info("LIVEPEEER Content-Duration=" + chunkInfo.getDuration());
         HttpResponse res = httpClient.execute(req);
         int status = res.getStatusLine().getStatusCode();
         size = entity.getSize();

@@ -103,6 +103,10 @@ public class LivepeerAPI {
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
+  public WMSLogger getLogger() {
+    return this.logger;
+  }
+
   public HttpClient getHttpClient() {
     return httpClient;
   }
@@ -113,13 +117,6 @@ public class LivepeerAPI {
     } else {
       System.out.println("LivepeerAPI: " + text);
     }
-  }
-
-  private HttpResponse _execute(HttpGet req) throws IOException {
-    log("" + req.getRequestLine());
-    HttpResponse res = httpClient.execute(req);
-    log("" + res.getStatusLine());
-    return res;
   }
 
   private HttpResponse _get(String path) throws IOException {

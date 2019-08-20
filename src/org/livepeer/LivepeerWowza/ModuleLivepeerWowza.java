@@ -51,7 +51,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 				String ingestPath = broadcaster.getAddress() + "/live/" + livepeerStream.getId();
 				logger.info("livepeer ingest path: " + ingestPath);
 
-				PushPublishHTTPCupertinoLivepeerHandler http = new PushPublishHTTPCupertinoLivepeerHandler(ingestPath);
+				PushPublishHTTPCupertinoLivepeerHandler http = new PushPublishHTTPCupertinoLivepeerHandler(ingestPath, _appInstance);
 
 				http.setHttpClient(livepeer.getHttpClient());
 				http.setAppInstance(_appInstance);
