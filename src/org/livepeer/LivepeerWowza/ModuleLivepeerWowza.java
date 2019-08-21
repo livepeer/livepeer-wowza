@@ -24,6 +24,22 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 	class StreamListener implements IMediaStreamActionNotify3 {
 		public void onPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
+			System.out.println("checking streamName="+streamName);
+			// Avoid an infinite loop - if this new stream is a transcoded rendition, don't transcode again
+			if (streamName.endsWith(".stream")) {
+				String streamFileName = stream.getName().substring(0, streamName.length() - 7);
+				System.out.println("streamfilename="+streamFileName);
+				for (LivepeerStream livepeerStream : livepeerStreams.values()) {
+					if (livepeerStream.managesStreamFile(streamFileName)) {
+						getLogger().info("LIVEPEER ignoring transcoded rendition " + stream.getName());
+						return;
+					}
+				}
+			}
+			else {
+				System.out.println("doesnt end with stream streamName="+streamName);
+			}
+
 			LivepeerStream livepeerStream = new LivepeerStream(stream, streamName, livepeer);
 			livepeerStreams.put(streamName, livepeerStream);
 			// To-do: retry logic
@@ -81,14 +97,6 @@ public class ModuleLivepeerWowza extends ModuleBase {
 	}
 
 	public void onStreamCreate(IMediaStream stream) {
-		// TODO FIXME this was intended to ignore our transcoded streams to avoid an
-		// infinite loop. instead, it ignores all local streams, including stream files
-		// and such. need to be more careful and only ignore transcoded renditions.
-		if (stream.getClientId() == -1) {
-			getLogger().info("Ignoring local stream");
-			return;
-		}
-
 		IMediaStreamActionNotify2 actionNotify = new StreamListener();
 
 		WMSProperties props = stream.getProperties();

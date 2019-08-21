@@ -36,6 +36,8 @@ public class LivepeerStream {
     private String applicationName;
     private String appInstanceName;
     private LivepeerAPIResourceStream livepeerStream;
+    private PushPublishHTTPCupertinoLivepeerHandler hlsPush;
+    private Set<String> activeStreamFiles = new HashSet<String>();
 
     public LivepeerStream(IMediaStream stream, String streamName, LivepeerAPI livepeer) {
         this.stream = stream;
@@ -89,6 +91,10 @@ public class LivepeerStream {
 
     }
 
+    public boolean managesStreamFile(String streamFileName) {
+        return this.activeStreamFiles.contains(streamFileName);
+    }
+
     /**
      * Sync this server's Stream Files to match what the server says
      */
@@ -100,6 +106,7 @@ public class LivepeerStream {
             streamFilesMustExist.put(streamName + "_" + renditionName, broadcaster.getAddress() + livepeerStream.getRenditions().get(renditionName));
         }
         logger.info("LIVEPEER ensuring these renditions exist: " + streamFilesMustExist);
+        this.activeStreamFiles = streamFilesMustExist.keySet();
         for (ShortObject streamFileListItem : streamFiles.getStreamFiles()) {
             String id = streamFileListItem.getId();
             StreamFileAppConfig streamFile = new StreamFileAppConfig(vHostName, applicationName, id);
