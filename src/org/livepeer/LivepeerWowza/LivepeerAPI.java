@@ -26,6 +26,7 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LivepeerAPI {
@@ -34,6 +35,7 @@ public class LivepeerAPI {
   public static final String LIVEPEER_PROP_API_KEY = "livepeer.org/api-key";
   private static String DEFAULT_LIVEPEER_API_URL = "https://livepeer.live/api";
   private static LivepeerAPI _instance;
+  private IApplicationInstance appInstance;
   private static ConcurrentHashMap<IApplicationInstance, LivepeerAPI> apiInstances = new ConcurrentHashMap<>();
   private String livepeerApiUrl;
   private String livepeerApiKey;
@@ -47,6 +49,7 @@ public class LivepeerAPI {
 
   public LivepeerAPI(IApplicationInstance appInstance, WMSLogger logger) {
     this.logger = logger;
+    this.appInstance = appInstance;
     apiInstances.put(appInstance, this);
 
     // Get our configuration options. They may be specified in the server, vhost, or application, and they override
@@ -111,6 +114,10 @@ public class LivepeerAPI {
     return httpClient;
   }
 
+  public IApplicationInstance getAppInstance() {
+    return appInstance;
+  }
+
   protected void log(String text) {
     if (this.logger != null) {
       this.logger.info("LivepeerAPI: " + text);
@@ -162,23 +169,9 @@ public class LivepeerAPI {
     return list;
   }
 
-  @JsonAutoDetect(fieldVisibility = Visibility.ANY)
-  public static class LivepeerAPIResourceBroadcaster {
-    private String address;
-    private TranscoderAppConfig transcoderAppConfig;
-    private Map<String, TranscoderTemplateAppConfig> transcoderTemplateAppConfig;
-
-    public LivepeerAPIResourceBroadcaster() {
-
-    }
-
-    public String getAddress() {
-      return address;
-    }
-
-    public void setAddress(String _address) {
-      address = _address;
-    }
-
+  public LivepeerAPIResourceBroadcaster getRandomBroadcaster() throws IOException {
+    Random rand = new Random();
+    List<LivepeerAPIResourceBroadcaster> broadcasters = this.getBroadcasters();
+    return broadcasters.get(rand.nextInt(broadcasters.size()));
   }
 }

@@ -1,103 +1,71 @@
 package org.livepeer.LivepeerWowza;
 
-import com.wowza.wms.logging.WMSLogger;
+import com.wowza.wms.server.LicensingException;
 import com.wowza.wms.stream.*;
 import com.wowza.wms.stream.livetranscoder.*;
 import com.wowza.wms.module.*;
-
-import java.util.*; 
 
 import com.wowza.wms.amf.AMFPacket;
 import com.wowza.wms.application.*;
 import com.wowza.wms.media.model.MediaCodecInfoAudio;
 import com.wowza.wms.media.model.MediaCodecInfoVideo;
 
+import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Livepeer Wowza module. It's designed to be a drop-in replacement for Wowza's
  * transcoding services, offloading everything to a hosted Livepeer API network.
  */
 public class ModuleLivepeerWowza extends ModuleBase {
+	private IApplicationInstance appInstance;
+	private LivepeerAPI livepeer;
+	private ConcurrentHashMap<String, LivepeerStream> livepeerStreams = new ConcurrentHashMap<>();
+
 	class StreamListener implements IMediaStreamActionNotify3 {
-		public void onMetaData(IMediaStream stream, AMFPacket metaDataPacket) {
-			System.out.println("onMetaData[" + stream.getContextStr() + "]: " + metaDataPacket.toString());
-		}
-
-		public void onPauseRaw(IMediaStream stream, boolean isPause, double location) {
-			System.out.println("onPauseRaw[" + stream.getContextStr() + "]: isPause:" + isPause + " location:" + location);
-		}
-
-		public void onPause(IMediaStream stream, boolean isPause, double location) {
-			System.out.println("onPause[" + stream.getContextStr() + "]: isPause:" + isPause + " location:" + location);
-		}
-
-		public void onPlay(IMediaStream stream, String streamName, double playStart, double playLen, int playReset) {
-			System.out.println("onPlay[" + stream.getContextStr() + "]: playStart:" + playStart + " playLen:" + playLen
-					+ " playReset:" + playReset);
-		}
-
 		public void onPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
+			LivepeerStream livepeerStream = new LivepeerStream(stream, streamName, livepeer);
+			livepeerStreams.put(streamName, livepeerStream);
+			// To-do: retry logic
 			try {
-				WMSLogger logger = getLogger();
-				logger.info("LivepeerWowza initalizing stream " + streamName);
-				String vHostName = _appInstance.getVHost().getName();
-				String applicationName = _appInstance.getApplication().getName();
-				LivepeerAPIResourceStream livepeerStream = livepeer.createStreamFromApplication(vHostName, applicationName);
-				System.out.println("livepeerStreamId="+livepeerStream.getId());
-				List<LivepeerAPI.LivepeerAPIResourceBroadcaster> broadcasters = livepeer.getBroadcasters();
-				Random rand = new Random();
-				LivepeerAPI.LivepeerAPIResourceBroadcaster broadcaster = broadcasters.get(rand.nextInt(broadcasters.size()));
-				System.out.println("LIVEPEER: picked broadcaster " + broadcaster.getAddress());
-
-				String ingestPath = broadcaster.getAddress() + "/live/" + livepeerStream.getId();
-				logger.info("livepeer ingest path: " + ingestPath);
-
-				PushPublishHTTPCupertinoLivepeerHandler http = new PushPublishHTTPCupertinoLivepeerHandler(ingestPath, _appInstance);
-
-				http.setHttpClient(livepeer.getHttpClient());
-				http.setAppInstance(_appInstance);
-				http.setSrcStreamName(streamName);
-				http.setDstStreamName(streamName);
-
-				http.init(_appInstance, streamName, stream, new HashMap<String, String>(),
-						new HashMap<String, String>(), null, true);
-				http.connect();
-
-				livepeerStream.ensureStreamFiles(streamName, broadcaster.getAddress(), vHostName, applicationName, _appInstance.getName());
-
-				System.out.println("LIVEPEER onPublish end");
-
-			} catch (Exception e) {
+				livepeerStream.start();
+			} catch (IOException e) {
 				e.printStackTrace();
-				System.out.println("LIVEPEER HTTP: " + e);
+			} catch (LicensingException e) {
+				e.printStackTrace();
 			}
 		}
 
-		public void onSeek(IMediaStream stream, double location) {
-			System.out.println("onSeek[" + stream.getContextStr() + "]: location:" + location);
-		}
-
 		public void onStop(IMediaStream stream) {
-			System.out.println("onStop[" + stream.getContextStr() + "]: ");
+			LivepeerStream livepeerStream = livepeerStreams.get(stream.getName());
+			if (livepeerStream != null) {
+				livepeerStream.stop();
+				livepeerStreams.remove(stream.getName());
+			}
 		}
 
 		public void onUnPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
-			System.out.println("onUnPublish[" + stream.getContextStr() + "]: streamName:" + streamName + " isRecord:"
-					+ isRecord + " isAppend:" + isAppend);
+			LivepeerStream livepeerStream = livepeerStreams.get(stream.getName());
+			if (livepeerStream != null) {
+				livepeerStream.stop();
+				livepeerStreams.remove(stream.getName());
+			}
 		}
 
-		public void onCodecInfoAudio(IMediaStream stream, MediaCodecInfoAudio codecInfoAudio) {
-			System.out.println(
-					"onCodecInfoAudio[" + stream.getContextStr() + " Audio Codec" + codecInfoAudio.toCodecsStr() + "]: ");
-		}
+		public void onMetaData(IMediaStream stream, AMFPacket metaDataPacket) {}
 
-		public void onCodecInfoVideo(IMediaStream stream, MediaCodecInfoVideo codecInfoVideo) {
-			System.out.println(
-					"onCodecInfoVideo[" + stream.getContextStr() + " Video Codec" + codecInfoVideo.toCodecsStr() + "]: ");
-		}
+		public void onPauseRaw(IMediaStream stream, boolean isPause, double location) {}
+
+		public void onPause(IMediaStream stream, boolean isPause, double location) {}
+
+		public void onPlay(IMediaStream stream, String streamName, double playStart, double playLen, int playReset) {}
+
+		public void onSeek(IMediaStream stream, double location) {}
+
+		public void onCodecInfoAudio(IMediaStream stream, MediaCodecInfoAudio codecInfoAudio) {}
+
+		public void onCodecInfoVideo(IMediaStream stream, MediaCodecInfoVideo codecInfoVideo) {}
 	}
-
-	private IApplicationInstance _appInstance;
-	private LivepeerAPI livepeer;
 
 	class TranscoderControl implements ILiveStreamTranscoderControl {
 		public boolean isLiveStreamTranscode(String transcoder, IMediaStream stream) {
@@ -107,9 +75,8 @@ public class ModuleLivepeerWowza extends ModuleBase {
 	}
 
 	public void onAppStart(IApplicationInstance appInstance) {
-		System.out.println("LIVEPEER onAppStart");
-		_appInstance = appInstance;
-		livepeer = new LivepeerAPI(appInstance, getLogger());
+		this.appInstance = appInstance;
+		this.livepeer = new LivepeerAPI(appInstance, getLogger());
 		appInstance.setLiveStreamTranscoderControl(new TranscoderControl());
 	}
 
@@ -128,7 +95,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		synchronized (props) {
 			props.put("streamActionNotifier", actionNotify);
 		}
-		_appInstance.getMediaCasterProperties().setProperty("cupertinoChunkFetchClass", "org.livepeer.LivepeerWowza.LivepeerCupertinoMediaCasterChunkFetch");
+		appInstance.getMediaCasterProperties().setProperty("cupertinoChunkFetchClass", "org.livepeer.LivepeerWowza.LivepeerCupertinoMediaCasterChunkFetch");
 
 		stream.addClientListener(actionNotify);
 		getLogger().info("LIVEPEER onStreamCreate[" + stream + "]: clientId:" + stream.getClientId());
