@@ -5,6 +5,8 @@ import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.rest.ConfigBase;
 import com.wowza.wms.rest.ShortObject;
 import com.wowza.wms.rest.WMSResponse;
+import com.wowza.wms.rest.vhosts.applications.instances.incomingstreams.IncomingStreamAction3;
+import com.wowza.wms.rest.vhosts.applications.instances.incomingstreams.IncomingStreamConfig3;
 import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFileAppConfig;
 import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFilesAppConfig;
 import com.wowza.wms.server.LicensingException;
@@ -18,12 +20,12 @@ import java.util.*;
 
 /**
  * Class for managing the lifecycle of a Livepeer stream. For example:
- *
+ * <p>
  * 1. Upon its construction, it creates a /api/stream object
  * 2. Once it gets that, it retrieves a /api/broadcaster and starts pushing with
  * PushPublishHTTPCupertinoLivepeerHandler
  * 3. It also handles creation of Stream Files for HLS pulls and SMIL files for ABR playlist creation
- *
+ * <p>
  * Upon the stream ending, it cleans up all of those things.
  */
 public class LivepeerStream {
@@ -68,7 +70,7 @@ public class LivepeerStream {
         logger.info("livepeer ingest path: " + ingestPath);
 
         // Start HLS pushing
-        PushPublishHTTPCupertinoLivepeerHandler hlsPush = new PushPublishHTTPCupertinoLivepeerHandler(ingestPath, appInstance);
+        hlsPush = new PushPublishHTTPCupertinoLivepeerHandler(ingestPath, appInstance);
 
         hlsPush.setHttpClient(livepeer.getHttpClient());
         hlsPush.setAppInstance(appInstance);
@@ -88,7 +90,31 @@ public class LivepeerStream {
      * This stream has ended. Clean up everything that needs cleaning up.
      */
     public void stop() {
+        hlsPush.disconnect();
+        logger.info("active stream files: " + this.activeStreamFiles);
+        for (String streamFileName : this.activeStreamFiles) {
+            try {
+                String incomingStreamName = streamFileName + ".stream";
+                IncomingStreamConfig3 incomingStream = new IncomingStreamConfig3(vHostName, applicationName, appInstanceName, incomingStreamName);
+                incomingStream.loadObject();
+                incomingStream.disconnectStreamAction("");
+                logger.info("LIVEPEER disconnected incoming stream: " + incomingStreamName);
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Error deleting streamFile " + streamFileName + ": " + e.getMessage());
+            }
+            try {
+                StreamFileAppConfig streamFile = new StreamFileAppConfig(vHostName, applicationName, streamFileName);
+                streamFile.loadObject();
+                streamFile.deleteObject();
+                logger.info("LIVEPEER deleted stream file: " + streamFileName);
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Error deleting streamFile " + streamFileName + ": " + e.getMessage());
+            }
 
+
+        }
     }
 
     public boolean managesStreamFile(String streamFileName) {

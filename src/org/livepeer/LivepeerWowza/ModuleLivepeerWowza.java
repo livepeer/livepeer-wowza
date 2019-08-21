@@ -24,20 +24,15 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 	class StreamListener implements IMediaStreamActionNotify3 {
 		public void onPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
-			System.out.println("checking streamName="+streamName);
 			// Avoid an infinite loop - if this new stream is a transcoded rendition, don't transcode again
 			if (streamName.endsWith(".stream")) {
 				String streamFileName = stream.getName().substring(0, streamName.length() - 7);
-				System.out.println("streamfilename="+streamFileName);
 				for (LivepeerStream livepeerStream : livepeerStreams.values()) {
 					if (livepeerStream.managesStreamFile(streamFileName)) {
 						getLogger().info("LIVEPEER ignoring transcoded rendition " + stream.getName());
 						return;
 					}
 				}
-			}
-			else {
-				System.out.println("doesnt end with stream streamName="+streamName);
 			}
 
 			LivepeerStream livepeerStream = new LivepeerStream(stream, streamName, livepeer);
