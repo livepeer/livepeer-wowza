@@ -19,6 +19,7 @@ import org.apache.http.message.BasicNameValuePair;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Class for managing the lifecycle of a Livepeer stream. For example:
@@ -55,6 +56,9 @@ public class LivepeerStream {
     public final static String LIVEPEER_SUFFIX = "_livepeer";
     public final static int SMIL_CHECK_INTERVAL = 3000;
 
+    private static ConcurrentHashMap<String, LivepeerStream> livepeerStreams = new ConcurrentHashMap<>();
+
+    private String id;
     private LivepeerAPI livepeer;
     private IMediaStream stream;
     private String streamName;
@@ -71,11 +75,34 @@ public class LivepeerStream {
 
     private Timer smilTimer;
 
+    public static LivepeerStream getFromUrl(String url) {
+        String id = url.split("/")[0];
+        return livepeerStreams.get(id);
+    }
+
+    /**
+     * Given a `livepeer-${uuid}` string, return an actual HTTP url of a broadcaster. If it's passed
+     * a non-Livepeer URL, it returns the string unchanged;
+     * @param url
+     * @return
+     */
+    public static String rewriteUrl(String url) {
+        LivepeerStream livepeerStream = LivepeerStream.getFromUrl(url);
+        if (livepeerStream == null) {
+            return url;
+        }
+        return livepeerStream.rewriteIdToUrl(url);
+    }
+
     public LivepeerStream(IMediaStream stream, String streamName, LivepeerAPI livepeer) {
         this.stream = stream;
         this.streamName = streamName;
         this.livepeer = livepeer;
         this.logger = livepeer.getLogger();
+    }
+
+    public String rewriteIdToUrl(String url) {
+        return url.replaceFirst(this.id, broadcaster.getAddress());
     }
 
     /**
@@ -91,16 +118,17 @@ public class LivepeerStream {
 
         // Create /api/stream
         livepeerStream = livepeer.createStreamFromApplication(vHostName, applicationName);
+        this.id = "livepeer-" + livepeerStream.getId();
+        LivepeerStream.livepeerStreams.put(this.id, this);
         logger.info("created livepeerStreamId=" + livepeerStream.getId());
 
         // Pick broadcaster from the list at /api/broadcaster
         broadcaster = livepeer.getRandomBroadcaster();
         logger.info("LIVEPEER: picked broadcaster " + broadcaster.getAddress());
-        String ingestPath = broadcaster.getAddress() + "/live/" + livepeerStream.getId();
-        logger.info("livepeer ingest path: " + ingestPath);
+        String ingestPath = this.id + "/live/" + livepeerStream.getId();
 
         // Start HLS pushing
-        hlsPush = new PushPublishHTTPCupertinoLivepeerHandler(ingestPath, appInstance);
+        hlsPush = new PushPublishHTTPCupertinoLivepeerHandler(ingestPath, appInstance, this);
 
         hlsPush.setHttpClient(livepeer.getHttpClient());
         hlsPush.setAppInstance(appInstance);
@@ -125,6 +153,7 @@ public class LivepeerStream {
         hlsPush.disconnect();
         this.stopStreamFiles();
         this.stopSmilFile();
+        livepeerStreams.remove(this.id);
     }
 
     /**
@@ -227,7 +256,7 @@ public class LivepeerStream {
         streamFiles.loadObject();
         Map<String, String> streamFilesMustExist = new HashMap<>();
         for (String renditionName : livepeerStream.getRenditions().keySet()) {
-            streamFilesMustExist.put(streamName + "_" + renditionName, broadcaster.getAddress() + livepeerStream.getRenditions().get(renditionName));
+            streamFilesMustExist.put(streamName + "_" + renditionName, this.id + livepeerStream.getRenditions().get(renditionName));
         }
         logger.info("LIVEPEER ensuring these renditions exist: " + streamFilesMustExist);
         this.activeStreamFiles = streamFilesMustExist.keySet();

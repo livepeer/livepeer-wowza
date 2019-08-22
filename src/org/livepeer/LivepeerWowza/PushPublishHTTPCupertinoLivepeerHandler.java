@@ -30,14 +30,16 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
   protected String httpAddress;
   protected HttpClient httpClient;
   protected WMSLogger logger;
+  protected LivepeerStream livepeerStream;
 
   boolean backup = false;
   String groupName = null;
   private int connectionTimeout = 5000;
   private int readTimeout = 5000;
 
-  public PushPublishHTTPCupertinoLivepeerHandler(String broadcaster, IApplicationInstance appInstance) throws LicensingException {
+  public PushPublishHTTPCupertinoLivepeerHandler(String broadcaster, IApplicationInstance appInstance, LivepeerStream livepeerStream) throws LicensingException {
     super();
+    this.livepeerStream = livepeerStream;
     LivepeerAPI livepeer = LivepeerAPI.getApiInstance(appInstance);
     logger = livepeer.getLogger();
     httpAddress = broadcaster;
@@ -76,7 +78,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
       PacketFragmentList list = mediaSegment.getFragmentList();
 			LiveStreamPacketizerCupertinoChunk chunkInfo = (LiveStreamPacketizerCupertinoChunk) mediaSegment.getChunkInfoCupertino();
       if (list != null && list.size() != 0) {
-        url = httpAddress + "/" + getSegmentUri(mediaSegment);
+        url = LivepeerStream.rewriteUrl(httpAddress + "/" + getSegmentUri(mediaSegment));
         LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
         HttpPut req = new HttpPut(url);
         req.setEntity(entity);
