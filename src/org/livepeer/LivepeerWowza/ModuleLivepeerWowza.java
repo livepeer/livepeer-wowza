@@ -1,5 +1,6 @@
 package org.livepeer.LivepeerWowza;
 
+import com.wowza.wms.rest.ConfigBase;
 import com.wowza.wms.server.LicensingException;
 import com.wowza.wms.stream.*;
 import com.wowza.wms.stream.livetranscoder.*;
@@ -24,15 +25,10 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 	class StreamListener implements IMediaStreamActionNotify3 {
 		public void onPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
-			// Avoid an infinite loop - if this new stream is a transcoded rendition, don't transcode again
-			if (streamName.endsWith(".stream")) {
-				String streamFileName = stream.getName().substring(0, streamName.length() - 7);
-				for (LivepeerStream livepeerStream : livepeerStreams.values()) {
-					if (livepeerStream.managesStreamFile(streamFileName)) {
-						getLogger().info("LIVEPEER ignoring transcoded rendition " + stream.getName());
-						return;
-					}
-				}
+			LivepeerStream manager = findStreamManager(streamName);
+			if (manager != null) {
+				getLogger().info("LIVEPEER ignoring transcoded rendition " + streamName);
+				return;
 			}
 
 			LivepeerStream livepeerStream = new LivepeerStream(stream, streamName, livepeer);
@@ -43,6 +39,8 @@ public class ModuleLivepeerWowza extends ModuleBase {
 			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (LicensingException e) {
+				e.printStackTrace();
+			} catch (ConfigBase.ConfigBaseException e) {
 				e.printStackTrace();
 			}
 		}
@@ -75,7 +73,15 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 		public void onCodecInfoAudio(IMediaStream stream, MediaCodecInfoAudio codecInfoAudio) {}
 
-		public void onCodecInfoVideo(IMediaStream stream, MediaCodecInfoVideo codecInfoVideo) {}
+		public void onCodecInfoVideo(IMediaStream stream, MediaCodecInfoVideo codecInfoVideo) {
+			getLogger().info("CodecInfoVideo for " + stream.getName());
+			LivepeerStream manager = findStreamManager(stream.getName());
+			if (manager == null) {
+				// Not a transcoded rendition, ignore.
+				return;
+			}
+			manager.onStreamFileCodecInfoVideo(stream, codecInfoVideo);
+		}
 	}
 
 	class TranscoderControl implements ILiveStreamTranscoderControl {
@@ -83,6 +89,24 @@ public class ModuleLivepeerWowza extends ModuleBase {
 			// No transcoding, Livepeer is gonna take care of it
 			return false;
 		}
+	}
+
+	/**
+	 * Find the LivepeerStream that is handling this incoming transcoded rendition, if any
+	 * @param streamName name of incoming stream
+	 * @return LivepeerStream in charge of this rendition or null if not found
+	 */
+	public LivepeerStream findStreamManager(String streamName) {
+		// Avoid an infinite loop - if this new stream is a transcoded rendition, don't transcode again
+		if (streamName.endsWith(".stream")) {
+			String streamFileName = streamName.substring(0, streamName.length() - 7);
+			for (LivepeerStream livepeerStream : livepeerStreams.values()) {
+				if (livepeerStream.managesStreamFile(streamFileName)) {
+					return livepeerStream;
+				}
+			}
+		}
+		return null;
 	}
 
 	public void onAppStart(IApplicationInstance appInstance) {

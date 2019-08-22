@@ -41,7 +41,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
     LivepeerAPI livepeer = LivepeerAPI.getApiInstance(appInstance);
     logger = livepeer.getLogger();
     httpAddress = broadcaster;
-    logger.info("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
+    logger.debug("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
   }
 
   public void setHttpClient(HttpClient client) {
@@ -50,7 +50,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 
   @Override
   public void load(HashMap<String, String> dataMap) {
-    logger.info("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler load " + dataMap);
+    logger.debug("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler load " + dataMap);
     super.load(dataMap);
   }
 
@@ -81,7 +81,6 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
         HttpPut req = new HttpPut(url);
         req.setEntity(entity);
         req.setHeader("Content-Duration", "" + chunkInfo.getDuration());
-        logger.info("LIVEPEEER Content-Duration=" + chunkInfo.getDuration());
         HttpResponse res = httpClient.execute(req);
         int status = res.getStatusLine().getStatusCode();
         size = entity.getSize();
