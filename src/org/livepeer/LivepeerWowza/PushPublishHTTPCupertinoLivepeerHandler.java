@@ -12,13 +12,16 @@ import java.util.UUID;
 
 import com.wowza.util.IPacketFragment;
 import com.wowza.util.PacketFragmentList;
+import com.wowza.wms.application.IApplicationInstance;
 import com.wowza.wms.httpstreamer.cupertinostreaming.livestreampacketizer.LiveStreamPacketizerCupertinoChunk;
+import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.manifest.model.m3u8.MediaSegmentModel;
 import com.wowza.wms.manifest.model.m3u8.PlaylistModel;
 import com.wowza.wms.pushpublish.protocol.cupertino.PushPublishHTTPCupertino;
 import com.wowza.wms.server.LicensingException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.AbstractHttpEntity;
 
@@ -27,16 +30,21 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
   protected String basePath = "live/";
   protected String httpAddress;
   protected HttpClient httpClient;
+  protected WMSLogger logger;
+  protected LivepeerStream livepeerStream;
 
   boolean backup = false;
   String groupName = null;
   private int connectionTimeout = 5000;
   private int readTimeout = 5000;
 
-  public PushPublishHTTPCupertinoLivepeerHandler(String broadcaster) throws LicensingException {
+  public PushPublishHTTPCupertinoLivepeerHandler(String broadcaster, IApplicationInstance appInstance, LivepeerStream livepeerStream) throws LicensingException {
     super();
+    this.livepeerStream = livepeerStream;
+    LivepeerAPI livepeer = LivepeerAPI.getApiInstance(appInstance);
+    logger = livepeer.getLogger();
     httpAddress = broadcaster;
-    System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
+    logger.debug("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
   }
 
   public void setHttpClient(HttpClient client) {
@@ -45,7 +53,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 
   @Override
   public void load(HashMap<String, String> dataMap) {
-    System.out.println("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler load " + dataMap);
+    logger.debug("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler load " + dataMap);
     super.load(dataMap);
   }
 
@@ -67,16 +75,23 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
   public int sendMediaSegment(MediaSegmentModel mediaSegment) {
     String url = null;
     int size = 0;
+    LivepeerAPIResourceBroadcaster livepeerBroadcaster = null;
     try {
       PacketFragmentList list = mediaSegment.getFragmentList();
 			LiveStreamPacketizerCupertinoChunk chunkInfo = (LiveStreamPacketizerCupertinoChunk) mediaSegment.getChunkInfoCupertino();
       if (list != null && list.size() != 0) {
-        url = httpAddress + "/" + getSegmentUri(mediaSegment);
+        url = livepeerStream.rewriteIdToUrl(httpAddress + "/" + getSegmentUri(mediaSegment));
+        livepeerBroadcaster = livepeerStream.getBroadcaster();
         LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setSocketTimeout(readTimeout)
+                .setConnectTimeout(connectionTimeout)
+                .setConnectionRequestTimeout(connectionTimeout)
+                .build();
         HttpPut req = new HttpPut(url);
+        req.setConfig(requestConfig);
         req.setEntity(entity);
         req.setHeader("Content-Duration", "" + chunkInfo.getDuration());
-        System.out.println("LIVEPEEER Content-Duration=" + chunkInfo.getDuration());
         HttpResponse res = httpClient.execute(req);
         int status = res.getStatusLine().getStatusCode();
         size = entity.getSize();
@@ -86,6 +101,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
         size = 1;  // empty fragment list.
     } catch (Exception e) {
       logError("sendMediaSegment", "Failed to send media segment data to " + url.toString(), e);
+      livepeerStream.notifyBroadcasterProblem(livepeerBroadcaster);
       size = 0;
     }
     return size;

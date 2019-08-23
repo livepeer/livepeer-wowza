@@ -7,6 +7,7 @@ import com.wowza.wms.mediacaster.cupertino.ICupertinoMediaCasterChunkFetch;
 import com.wowza.wms.mediacaster.cupertino.LivepeerCupertinoMediaCasterFetchedResult;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicResponseHandler;
 
@@ -17,31 +18,67 @@ import java.net.URL;
 
 public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCasterChunkFetch {
   private HttpClient httpClient;
+  private LivepeerAPI livepeer;
 
   @Override
   public void init(IApplicationInstance applicationInstance, CupertinoMediaCasterContext cupertinoMediaCasterContext) {
-    System.out.println("LIVEPEER LivepeerCupertinoMediaCasterChunkFetch init()");
-    LivepeerAPI livepeer = LivepeerAPI.getApiInstance(applicationInstance);
+    livepeer = LivepeerAPI.getApiInstance(applicationInstance);
+    livepeer.log("LivepeerCupertinoMediaCasterChunkFetch init()");
     httpClient = livepeer.getHttpClient();
   }
 
+  /**
+   * Fetch a Livepeer manifest
+   * @param rawPath path to manifest
+   * @param timeout timeout in ms
+   * @param retries number of times to retry
+   * @return result manifest
+   */
   @Override
-  public CupertinoMediaCasterFetchedResult fetchManifest(String path, int timeout, int retries) {
-    System.out.println("LIVEPEER LivepeerCupertinoMediaCasterChunkFetch fetchManifest(" + path + ", " + timeout + ", " + retries + ")");
-    LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
-    HttpGet req = new HttpGet(path);
-    String responseString = null;
-    try {
-      HttpResponse res = httpClient.execute(req);
-      responseString = new BasicResponseHandler().handleResponse(res);
-    } catch (IOException e) {
-      e.printStackTrace();
+  public CupertinoMediaCasterFetchedResult fetchManifest(String rawPath, int timeout, int retries) {
+    livepeer.log("LivepeerCupertinoMediaCasterChunkFetch fetchManifest(" + rawPath + ", " + timeout + ", " + retries + ")");
+    for (int i = 0; i < retries; i += 1) {
+      try {
+        String path = LivepeerStream.rewriteUrl(rawPath);
+        HttpGet req = new HttpGet(path);
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setSocketTimeout(timeout)
+                .setConnectTimeout(timeout)
+                .setConnectionRequestTimeout(timeout)
+                .build();
+        req.setConfig(requestConfig);
+        LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
+        HttpResponse res = httpClient.execute(req);
+        String responseString = new BasicResponseHandler().handleResponse(res);
+        String outputString = fixAbsoluteUrls(responseString, path);
+        httpResult.setResultString(outputString);
+        httpResult.setResultType(CupertinoMediaCasterFetchedResult.textType);
+        httpResult.setTimedOut(false);
+        httpResult.setResultCode(200);
+        return httpResult;
+      } catch (IOException e) {
+        livepeer.getLogger().error("GET " + rawPath + " failed, retry #" + i + ": "+ e.getMessage());
+      }
     }
-    // Wowza's HLS parser can't handle leading slashes - replace them with full URLs please
+    LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
+    httpResult.setResultCode(404);
+    httpResult.setTimedOut(true);
+    return httpResult;
+  }
+
+  /**
+   * Wowza's HLS parser can't handle leading slashes in HLS urls. This takes in an HLS manifest with /foo/bar/segment.ts
+   * urls and replaces them with full http://example.com/foo/bar/segment.ts urls.
+   * @param responseString HLS manifest
+   * @param path https://example.com/foo/bar
+   * @return New manifest with full http://example.com/foo/bar/segment.ts URLs
+   */
+  protected String fixAbsoluteUrls(String responseString, String path) {
     URL url = null;
     try {
       url = new URL(path);
     } catch (MalformedURLException e) {
+      // Uhhhh we just successfully downloaded this URL over HTTP, so this really shouldn't happen.
       e.printStackTrace();
       throw new RuntimeException(e);
     }
@@ -53,44 +90,41 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
       }
       outputString += line + "\n";
     }
-    httpResult.setResultType(CupertinoMediaCasterFetchedResult.textType);
-    httpResult.setResultString(outputString);
-    httpResult.setTimedOut(false);
-    httpResult.setResultCode(200);
-    return httpResult;
+    return outputString;
   }
 
   @Override
-  public CupertinoMediaCasterFetchedResult fetchBlock(String path, int timeout, int retries) {
-    System.out.println("LIVEPEER LivepeerCupertinoMediaCasterChunkFetch fetchBlock(" + path + ", " + timeout + ", " + retries + ")");
+  public CupertinoMediaCasterFetchedResult fetchBlock(String rawPath, int timeout, int retries) {
+    livepeer.log(" LivepeerCupertinoMediaCasterChunkFetch fetchBlock(" + rawPath + ", " + timeout + ", " + retries + ")");
     //if not success set to 404
-    HttpGet req = new HttpGet(path);
+    for (int i = 0; i < retries; i += 1) {
+      try {
+        String path = LivepeerStream.rewriteUrl(rawPath);
+        HttpGet req = new HttpGet(path);
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setSocketTimeout(timeout)
+                .setConnectTimeout(timeout)
+                .setConnectionRequestTimeout(timeout)
+                .build();
+        req.setConfig(requestConfig);
+        LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
+        HttpResponse res = null;
+        res = httpClient.execute(req);
+        httpResult.setResultType(CupertinoMediaCasterFetchedResult.dataType);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        res.getEntity().writeTo(baos);
+        httpResult.setDataBlock(baos.toByteArray());
+        httpResult.setTimedOut(false);
+        httpResult.setResultCode(200);
+        return httpResult;
+      } catch (IOException e) {
+        livepeer.getLogger().error("GET " + rawPath + " failed, retry #" + i + ": "+ e.getMessage());
+      }
+    }
     LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
-    String responseString = null;
-    HttpResponse res = null;
-    try {
-      res = httpClient.execute(req);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    httpResult.setResultType(CupertinoMediaCasterFetchedResult.dataType);
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try {
-      res.getEntity().writeTo(baos);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    httpResult.setDataBlock(baos.toByteArray());
-    httpResult.setTimedOut(false);
-    httpResult.setResultCode(200);
+    httpResult.setResultCode(404);
+    httpResult.setTimedOut(true);
     return httpResult;
-//
-//  data result
-//
-//  httpResult.resultType = CupertinoMediaCasterFetchedResult.dataType;
-//  httpResult.dataBlock = baos.toByteArray();
-//  httpResult.timedOut = false;
-//  httpResult.resultCode = 200;
   }
 
 }

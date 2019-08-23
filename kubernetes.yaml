@@ -25,6 +25,9 @@ spec:
       terminationGracePeriodSeconds: 1
       containers:
         - name: wowza
+          ports:
+            - containerPort: 1935
+              hostPort: 1937
           resources:
             requests:
               memory: "4Gi"
