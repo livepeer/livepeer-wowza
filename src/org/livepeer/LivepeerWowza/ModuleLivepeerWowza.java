@@ -33,22 +33,13 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 			LivepeerStream livepeerStream = new LivepeerStream(stream, streamName, livepeer);
 			livepeerStreams.put(streamName, livepeerStream);
-			// To-do: retry logic
-			try {
-				livepeerStream.start();
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (LicensingException e) {
-				e.printStackTrace();
-			} catch (ConfigBase.ConfigBaseException e) {
-				e.printStackTrace();
-			}
+			livepeerStream.start();
 		}
 
 		public void onStop(IMediaStream stream) {
 			LivepeerStream livepeerStream = livepeerStreams.get(stream.getName());
 			if (livepeerStream != null) {
-				livepeerStream.stop();
+				livepeerStream.stopStream();
 				livepeerStreams.remove(stream.getName());
 			}
 		}
@@ -56,7 +47,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		public void onUnPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
 			LivepeerStream livepeerStream = livepeerStreams.get(stream.getName());
 			if (livepeerStream != null) {
-				livepeerStream.stop();
+				livepeerStream.stopStream();
 				livepeerStreams.remove(stream.getName());
 			}
 		}

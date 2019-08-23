@@ -21,6 +21,7 @@ import com.wowza.wms.pushpublish.protocol.cupertino.PushPublishHTTPCupertino;
 import com.wowza.wms.server.LicensingException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.AbstractHttpEntity;
 
@@ -74,13 +75,21 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
   public int sendMediaSegment(MediaSegmentModel mediaSegment) {
     String url = null;
     int size = 0;
+    LivepeerAPIResourceBroadcaster livepeerBroadcaster = null;
     try {
       PacketFragmentList list = mediaSegment.getFragmentList();
 			LiveStreamPacketizerCupertinoChunk chunkInfo = (LiveStreamPacketizerCupertinoChunk) mediaSegment.getChunkInfoCupertino();
       if (list != null && list.size() != 0) {
-        url = LivepeerStream.rewriteUrl(httpAddress + "/" + getSegmentUri(mediaSegment));
+        url = livepeerStream.rewriteIdToUrl(httpAddress + "/" + getSegmentUri(mediaSegment));
+        livepeerBroadcaster = livepeerStream.getBroadcaster();
         LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setSocketTimeout(readTimeout)
+                .setConnectTimeout(connectionTimeout)
+                .setConnectionRequestTimeout(connectionTimeout)
+                .build();
         HttpPut req = new HttpPut(url);
+        req.setConfig(requestConfig);
         req.setEntity(entity);
         req.setHeader("Content-Duration", "" + chunkInfo.getDuration());
         HttpResponse res = httpClient.execute(req);
@@ -92,6 +101,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
         size = 1;  // empty fragment list.
     } catch (Exception e) {
       logError("sendMediaSegment", "Failed to send media segment data to " + url.toString(), e);
+      livepeerStream.notifyBroadcasterProblem(livepeerBroadcaster);
       size = 0;
     }
     return size;
