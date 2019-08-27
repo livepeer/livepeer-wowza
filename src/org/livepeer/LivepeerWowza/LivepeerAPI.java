@@ -11,6 +11,8 @@ import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderTemplateAppConfig;
 import com.wowza.wms.server.Server;
+import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -20,10 +22,12 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContexts;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -33,7 +37,8 @@ public class LivepeerAPI {
 
   public static final String LIVEPEER_PROP_API_SERVER_URL = "livepeer.org/api-server-url";
   public static final String LIVEPEER_PROP_API_KEY = "livepeer.org/api-key";
-  private static String DEFAULT_LIVEPEER_API_URL = "https://livepeer.live/api";
+  private static final String DEFAULT_LIVEPEER_API_URL = "https://livepeer.live/api";
+  private static final String DEFAULT_LIVEPEER_API_KEY = "no_api_key";
   private static LivepeerAPI _instance;
   private IApplicationInstance appInstance;
   private static ConcurrentHashMap<IApplicationInstance, LivepeerAPI> apiInstances = new ConcurrentHashMap<>();
@@ -69,6 +74,7 @@ public class LivepeerAPI {
       livepeerApiUrl = applicationProps.getPropertyStr(LIVEPEER_PROP_API_SERVER_URL);
     }
 
+    livepeerApiKey = DEFAULT_LIVEPEER_API_KEY;
     if (serverProps.getPropertyStr(LIVEPEER_PROP_API_KEY) != null)  {
       livepeerApiKey = serverProps.getPropertyStr(LIVEPEER_PROP_API_KEY);
     }
@@ -98,9 +104,11 @@ public class LivepeerAPI {
             new String[]{"TLSv1.1", "TLSv1.2"},
             null,
             SSLConnectionSocketFactory.getDefaultHostnameVerifier());
+    List<Header> headers = Arrays.asList(new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + livepeerApiKey));
     httpClient = HttpClients.custom()
             .setSSLSocketFactory(sslsf)
             .setUserAgent("LivepeerWowza/" + LivepeerVersion.VERSION)
+            .setDefaultHeaders(headers)
             .build();
     mapper = new ObjectMapper();
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

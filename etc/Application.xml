@@ -246,6 +246,11 @@
 				<Value>http://10.9.168.100:8080/api</Value>
 				<Type>String</Type>
 			</Property>
+			<Property>
+				<Name>livepeer.org/api-key</Name>
+				<Value>79FBF6F4-D14A-4049-A3E3-72A3962E1CA4</Value>
+				<Type>String</Type>
+			</Property>
 		</Properties>
 	</Application>
 </Root>
