@@ -52,6 +52,16 @@ public class ModuleLivepeerWowza extends ModuleBase {
 			}
 		}
 
+		public void onCodecInfoVideo(IMediaStream stream, MediaCodecInfoVideo codecInfoVideo) {
+			getLogger().info("CodecInfoVideo for " + stream.getName());
+			LivepeerStream manager = findStreamManager(stream.getName());
+			if (manager == null) {
+				// Not a transcoded rendition, ignore.
+				return;
+			}
+			manager.onStreamFileCodecInfoVideo(stream, codecInfoVideo);
+		}
+
 		public void onMetaData(IMediaStream stream, AMFPacket metaDataPacket) {}
 
 		public void onPauseRaw(IMediaStream stream, boolean isPause, double location) {}
@@ -64,15 +74,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 		public void onCodecInfoAudio(IMediaStream stream, MediaCodecInfoAudio codecInfoAudio) {}
 
-		public void onCodecInfoVideo(IMediaStream stream, MediaCodecInfoVideo codecInfoVideo) {
-			getLogger().info("CodecInfoVideo for " + stream.getName());
-			LivepeerStream manager = findStreamManager(stream.getName());
-			if (manager == null) {
-				// Not a transcoded rendition, ignore.
-				return;
-			}
-			manager.onStreamFileCodecInfoVideo(stream, codecInfoVideo);
-		}
+
 	}
 
 	class TranscoderControl implements ILiveStreamTranscoderControl {

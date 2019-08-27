@@ -3,6 +3,9 @@ package org.livepeer.LivepeerWowza;
 import com.wowza.wms.application.IApplicationInstance;
 import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.media.model.MediaCodecInfoVideo;
+import com.wowza.wms.medialist.MediaList;
+import com.wowza.wms.medialist.MediaListRendition;
+import com.wowza.wms.medialist.MediaListSegment;
 import com.wowza.wms.rest.ConfigBase;
 import com.wowza.wms.rest.ShortObject;
 import com.wowza.wms.rest.WMSResponse;
@@ -13,6 +16,8 @@ import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFilesAppConfig;
 import com.wowza.wms.rest.vhosts.smilfiles.SMILFileStreamConfig;
 import com.wowza.wms.server.LicensingException;
 import com.wowza.wms.stream.IMediaStream;
+import com.wowza.wms.stream.MediaStreamMap;
+import com.wowza.wms.stream.MediaStreamMapGroup;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
@@ -83,6 +88,7 @@ public class LivepeerStream extends Thread {
 
     /**
      * Given a URL, return the associated LivepeerStream instance. Returns null if this isn't a Livepeer URL.
+     *
      * @param url url
      * @return LivepeerStream if one exists
      */
@@ -94,6 +100,7 @@ public class LivepeerStream extends Thread {
     /**
      * Given a `livepeer-${uuid}` string, return an actual HTTP url of a broadcaster. If it's passed
      * a non-Livepeer URL, it returns the string unchanged;
+     *
      * @param url
      * @return
      */
@@ -107,9 +114,10 @@ public class LivepeerStream extends Thread {
 
     /**
      * Create a Livepeer stream. We'll need the stream, its name, and a LivepeerAPI instance
-     * @param stream the stream
+     *
+     * @param stream     the stream
      * @param streamName its name
-     * @param livepeer LivepeerAPI instance
+     * @param livepeer   LivepeerAPI instance
      */
     public LivepeerStream(IMediaStream stream, String streamName, LivepeerAPI livepeer) {
         this.stream = stream;
@@ -124,7 +132,7 @@ public class LivepeerStream extends Thread {
     }
 
     public synchronized void startStreamRetry() {
-        while(true) {
+        while (true) {
             try {
                 startStream();
                 break;
@@ -185,8 +193,7 @@ public class LivepeerStream extends Thread {
                     isShuttingDown = true;
                     this.stopStream();
                     return;
-                }
-                else if (isAcquiringBroadcaster) {
+                } else if (isAcquiringBroadcaster) {
                     // It's to get a new broadcaster. Cool.
                     broadcaster = this.pickBroadcasterRetry();
                     isAcquiringBroadcaster = false;
@@ -226,8 +233,7 @@ public class LivepeerStream extends Thread {
                 if (broadcaster != null) {
                     logger.info("LIVEPEER: picked broadcaster " + broadcaster.getAddress());
                     return broadcaster;
-                }
-                else {
+                } else {
                     logger.info("LIVEPEER: no broadcasters found");
                 }
             } catch (Exception e) {
@@ -248,14 +254,14 @@ public class LivepeerStream extends Thread {
     private void fatalWait(long ms) {
         try {
             this.wait(ms);
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             this.stopStream();
         }
     }
 
     /**
      * Notify the LivepeerStream thread that there's a problem with a broadcaster and we should try and find a new one.
+     *
      * @param problematicBroadcaster problematic broadcaster
      */
     public synchronized void notifyBroadcasterProblem(LivepeerAPIResourceBroadcaster problematicBroadcaster) {
@@ -280,6 +286,7 @@ public class LivepeerStream extends Thread {
         hlsPush.disconnect();
         this.stopStreamFiles();
         this.stopSmilFile();
+        this.stopStreamNameGroups();
         livepeerStreams.remove(this.id);
         // This flag being false implies this was an external call and we need to shut down the thread.
         if (!isShuttingDown) {
@@ -290,6 +297,7 @@ public class LivepeerStream extends Thread {
 
     /**
      * Given a stream file name, return true if it's one of our transcoded renditions
+     *
      * @param streamFileName stream file name
      * @return is this one of our transcoded renditions?
      */
@@ -299,11 +307,12 @@ public class LivepeerStream extends Thread {
 
     /**
      * Notify this LivepeerStream about a new rendition for it to handle
-     *
+     * <p>
      * We don't know what kind of threads are going to trigger this event, so let's play
      * it safe with synchronized
+     *
      * @param newStream new stream
-     * @param newInfo codec information
+     * @param newInfo   codec information
      */
     public synchronized void onStreamFileCodecInfoVideo(IMediaStream newStream, MediaCodecInfoVideo newInfo) {
         streamFileInfos.put(newStream.getName(), new StreamFileInfo(newStream, newInfo));
@@ -316,6 +325,9 @@ public class LivepeerStream extends Thread {
      * on them until we do.
      */
     public synchronized void updateSmilFile() {
+        // Stream name groups and smilFiles have the same lifecycle, so we use this function as an entry point
+        // and update both
+        updateStreamNameGroups();
         SMILFileAppConfig smilFile = new SMILFileAppConfig(vHostName, applicationName, smilFileName);
         smilFile.loadObject();
         Set<String> activeSources = new HashSet<>();
@@ -378,6 +390,53 @@ public class LivepeerStream extends Thread {
             smilTimer = null;
             updateSmilFile();
         }
+    }
+
+    public synchronized void updateStreamNameGroups() {
+        String streamGroupName = streamName + "_all";
+        IApplicationInstance requiredAppInstance = livepeer.getAppInstance();
+        MediaStreamMap streams = requiredAppInstance.getStreams();
+
+        // Create a mapGroup object
+        MediaStreamMapGroup thisMapGroup = streams.getNameGroupByGroupName(streamGroupName);
+        if (thisMapGroup == null) {
+            thisMapGroup = new MediaStreamMapGroup();
+            thisMapGroup.setName(streamGroupName);
+            streams.addNameGroup(thisMapGroup);
+            logger.info("LIVEPEER Created stream name group: " + streamGroupName);
+        }
+
+        // Create a MediaList
+        MediaList newList = new MediaList();
+
+        // Create a segment list
+        MediaListSegment newSegment = new MediaListSegment();
+
+        for (StreamFileInfo info : streamFileInfos.values()) {
+            IMediaStream stream = info.getStream();
+            MediaCodecInfoVideo codecInfoVideo = info.getCodecInfoVideo();
+            if (stream.getPublishBitrateVideo() == -1 || stream.getPublishBitrateAudio() == -1) {
+                // We don't yet have a bitrate for this stream, wait till we do
+                continue;
+            }
+            // Create a Rendition entry - you will need multiple of these for each rendition you are adding
+            MediaListRendition newRendition = new MediaListRendition();
+            newRendition.setBitrateAudio(stream.getPublishBitrateAudio());
+            newRendition.setBitrateVideo(stream.getPublishBitrateVideo());
+            newRendition.setWidth(codecInfoVideo.getVideoWidth());
+            newRendition.setHeight(codecInfoVideo.getVideoHeight());
+            newRendition.setName(stream.getName());
+
+            // Add the rendtion(s) to the segment
+            newSegment.addRendition(newRendition);
+        }
+
+        // Add the segment to the MediaList
+        newList.addSegment(newSegment);
+
+        logger.info("Updated stream name group " + streamGroupName + " with renditions " + streamFileInfos.keySet());
+        // Add the medialist to the mapgroup
+        thisMapGroup.setMediaList(newList);
     }
 
     /**
@@ -493,8 +552,18 @@ public class LivepeerStream extends Thread {
         smilFile.deleteObject();
     }
 
+    protected void stopStreamNameGroups() {
+        MediaStreamMap streams = livepeer.getAppInstance().getStreams();
+        MediaStreamMapGroup thisMapGroup = streams.getNameGroupByGroupName(streamName + "_all");
+        if (thisMapGroup != null)
+        {
+            streams.removeNameGroup(thisMapGroup);
+        }
+    }
+
     /**
      * Given a `livepeer-${uuid} string, rewrite it to actually reflect the broadcaster address
+     *
      * @param url input url
      * @return rewritten url
      */
