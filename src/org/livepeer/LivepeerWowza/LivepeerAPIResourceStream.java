@@ -24,8 +24,10 @@ import java.util.*;
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class LivepeerAPIResourceStream {
   public final static String LIVEPEER_PREFIX = "livepeer_";
+
   LivepeerAPIResourceStreamWowza wowza = new LivepeerAPIResourceStreamWowza();
   private String id;
+  private String name;
   private List<String> presets = new ArrayList<String>();
   private Map<String, String> renditions = new HashMap<String, String>();
 
@@ -88,14 +90,32 @@ public class LivepeerAPIResourceStream {
     this.renditions = renditions;
   }
 
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public LivepeerAPIResourceStreamWowza getWowza() {
+    return wowza;
+  }
+
+  public void setWowza(LivepeerAPIResourceStreamWowza wowza) {
+    this.wowza = wowza;
+  }
+
+
   /**
-   * Class represending the "wowza" subfield. This probably could have been a ShortObject or something
-   * but this works fine.
+   * Class representing the "wowza" subfield.
    */
   @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-  public class LivepeerAPIResourceStreamWowza {
+  public static class LivepeerAPIResourceStreamWowza {
     private Map<String, TranscoderTemplateAppConfig> transcoderTemplateAppConfig = new HashMap<>();
     private TranscoderAppConfig transcoderAppConfig;
+
+    private List<LivepeerAPIResourceStreamWowzaStreamNameGroup> streamNameGroups = new ArrayList<>();
 
     public TranscoderAppConfig getTranscoderAppConfig() {
       return transcoderAppConfig;
@@ -111,6 +131,39 @@ public class LivepeerAPIResourceStream {
 
     public void setTranscoderTemplateAppConfig(Map<String, TranscoderTemplateAppConfig> ttac) {
       transcoderTemplateAppConfig = ttac;
+    }
+
+    public List<LivepeerAPIResourceStreamWowzaStreamNameGroup> getStreamNameGroups() {
+      return streamNameGroups;
+    }
+
+    public void setStreamNameGroups(List<LivepeerAPIResourceStreamWowzaStreamNameGroup> streamNameGroups) {
+      this.streamNameGroups = streamNameGroups;
+    }
+  }
+
+  /**
+   * Class representing entries in the "streamNameGroups" subfield
+   */
+  @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+  public static class LivepeerAPIResourceStreamWowzaStreamNameGroup {
+    private String name;
+    private List<String> renditions;
+
+    public String getName() {
+      return name;
+    }
+
+    public void setName(String name) {
+      this.name = name;
+    }
+
+    public List<String> getRenditions() {
+      return renditions;
+    }
+
+    public void setRenditions(List<String> renditions) {
+      this.renditions = renditions;
     }
   }
 }

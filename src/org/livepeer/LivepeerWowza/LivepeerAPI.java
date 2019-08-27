@@ -149,8 +149,9 @@ public class LivepeerAPI {
    * @return wowza resource
    * @throws IOException something went wrong talking to the Livepeer API
    */
-  public LivepeerAPIResourceStream createStreamFromApplication(String vhost, String application) throws IOException {
+  public LivepeerAPIResourceStream createStreamFromApplication(String vhost, String application, String streamName) throws IOException {
     LivepeerAPIResourceStream body = new LivepeerAPIResourceStream(vhost, application);
+    body.setName(streamName);
     HttpResponse response = _post("/stream", body);
     LivepeerAPIResourceStream info = mapper.readValue(response.getEntity().getContent(), LivepeerAPIResourceStream.class);
     return info;
