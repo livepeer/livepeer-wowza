@@ -6,12 +6,14 @@ import com.wowza.wms.media.model.MediaCodecInfoVideo;
 import com.wowza.wms.medialist.MediaList;
 import com.wowza.wms.medialist.MediaListRendition;
 import com.wowza.wms.medialist.MediaListSegment;
+import com.wowza.wms.rest.AdvancedSetting;
 import com.wowza.wms.rest.ConfigBase;
 import com.wowza.wms.rest.ShortObject;
 import com.wowza.wms.rest.WMSResponse;
 import com.wowza.wms.rest.vhosts.applications.instances.incomingstreams.IncomingStreamConfig3;
 import com.wowza.wms.rest.vhosts.applications.smilfiles.SMILFileAppConfig;
 import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFileAppConfig;
+import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFileAppConfigAdv;
 import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFilesAppConfig;
 import com.wowza.wms.rest.vhosts.smilfiles.SMILFileStreamConfig;
 import com.wowza.wms.server.LicensingException;
@@ -493,6 +495,7 @@ public class LivepeerStream extends Thread {
         }
         logger.info("LIVEPEER creating stream files for renditions: " + streamFilesMustExist);
         for (String renditionName : streamFilesMustExist.keySet()) {
+            // Create the streamfile
             StreamFileAppConfig streamFile = new StreamFileAppConfig();
             streamFile.setVhostName(vHostName);
             streamFile.setAppName(applicationName);
@@ -508,6 +511,26 @@ public class LivepeerStream extends Thread {
                 throw new RuntimeException(e);
             }
             logger.info("LIVEPEER created streamFile foo " + renditionName);
+
+            StreamFileAppConfigAdv streamFileAdv = new StreamFileAppConfigAdv(vHostName, applicationName, renditionName);
+            streamFileAdv.loadObject();
+            AdvancedSetting s = streamFileAdv.getAdvSetting("CupertinoHLS", "cupertinoManifestMaxBufferBlockCount");
+            s.setEnabled(true);
+            s.setValue("35");
+            s = streamFileAdv.getAdvSetting("CupertinoHLS", "cupertinoManifestBufferBlockCount");
+            s.setEnabled(true);
+            s.setValue("4");
+            s = streamFileAdv.getAdvSetting("CupertinoHLS", "cupertinoAutoSegmentBuffer");
+            s.setEnabled(true);
+            s.setValue("false");
+            try {
+                streamFileAdv.saveObject();
+            } catch (ConfigBase.ConfigBaseException e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            }
+
+            // Connect the streamfile
             // This API takes a query string! Fun!
             List<NameValuePair> params = new ArrayList<>();
             params.add(new BasicNameValuePair("vhost", vHostName));
