@@ -213,11 +213,12 @@ public class LivepeerStream extends Thread {
     private LivepeerAPIResourceStream createStreamRetry() {
         while (true) {
             try {
-                LivepeerAPIResourceStream livepeerStream = livepeer.createStreamFromApplication(vHostName, applicationName);
+                LivepeerAPIResourceStream livepeerStream = livepeer.createStreamFromApplication(vHostName, applicationName, streamName);
                 logger.info("LIVEPEER: created stream " + livepeerStream.getId());
                 return livepeerStream;
             } catch (Exception e) {
-                logger.info("LivepeerStream crashed during createStreamRetry(), retrying in " + START_STREAM_RETRY_INTERVAL + "ms.");
+                logger.error("LivepeerStream crashed during createStreamRetry(), retrying in " + START_STREAM_RETRY_INTERVAL + "ms.");
+                logger.error(e);
                 this.fatalWait(START_STREAM_RETRY_INTERVAL);
             }
         }
@@ -392,51 +393,74 @@ public class LivepeerStream extends Thread {
         }
     }
 
+    /**
+     * Update our appropriate stream name groups from the relevant field in our stream object
+     */
     public synchronized void updateStreamNameGroups() {
-        String streamGroupName = streamName + "_all";
-        IApplicationInstance requiredAppInstance = livepeer.getAppInstance();
-        MediaStreamMap streams = requiredAppInstance.getStreams();
+        for (LivepeerAPIResourceStream.LivepeerAPIResourceStreamWowzaStreamNameGroup streamNameGroup : livepeerStream.getWowza().getStreamNameGroups()) {
+            String streamGroupName = streamNameGroup.getName();
+            IApplicationInstance requiredAppInstance = livepeer.getAppInstance();
+            MediaStreamMap streams = requiredAppInstance.getStreams();
 
-        // Create a mapGroup object
-        MediaStreamMapGroup thisMapGroup = streams.getNameGroupByGroupName(streamGroupName);
-        if (thisMapGroup == null) {
-            thisMapGroup = new MediaStreamMapGroup();
-            thisMapGroup.setName(streamGroupName);
-            streams.addNameGroup(thisMapGroup);
-            logger.info("LIVEPEER Created stream name group: " + streamGroupName);
-        }
-
-        // Create a MediaList
-        MediaList newList = new MediaList();
-
-        // Create a segment list
-        MediaListSegment newSegment = new MediaListSegment();
-
-        for (StreamFileInfo info : streamFileInfos.values()) {
-            IMediaStream stream = info.getStream();
-            MediaCodecInfoVideo codecInfoVideo = info.getCodecInfoVideo();
-            if (stream.getPublishBitrateVideo() == -1 || stream.getPublishBitrateAudio() == -1) {
-                // We don't yet have a bitrate for this stream, wait till we do
-                continue;
+            // Create a mapGroup object
+            MediaStreamMapGroup thisMapGroup = streams.getNameGroupByGroupName(streamGroupName);
+            if (thisMapGroup == null) {
+                thisMapGroup = new MediaStreamMapGroup();
+                thisMapGroup.setName(streamGroupName);
+                streams.addNameGroup(thisMapGroup);
+                logger.info("LIVEPEER Created stream name group: " + streamGroupName);
             }
-            // Create a Rendition entry - you will need multiple of these for each rendition you are adding
-            MediaListRendition newRendition = new MediaListRendition();
-            newRendition.setBitrateAudio(stream.getPublishBitrateAudio());
-            newRendition.setBitrateVideo(stream.getPublishBitrateVideo());
-            newRendition.setWidth(codecInfoVideo.getVideoWidth());
-            newRendition.setHeight(codecInfoVideo.getVideoHeight());
-            newRendition.setName(stream.getName());
 
-            // Add the rendtion(s) to the segment
-            newSegment.addRendition(newRendition);
+            // Create a MediaList
+            MediaList newList = new MediaList();
+
+            // Create a segment list
+            MediaListSegment newSegment = new MediaListSegment();
+
+            List<String> addedNames = new ArrayList<>();
+
+            for (StreamFileInfo info : streamFileInfos.values()) {
+                IMediaStream stream = info.getStream();
+                MediaCodecInfoVideo codecInfoVideo = info.getCodecInfoVideo();
+                if (stream.getPublishBitrateVideo() == -1 || stream.getPublishBitrateAudio() == -1) {
+                    // We don't yet have a bitrate for this stream, wait till we do
+                    continue;
+                }
+                // Check to see if our stream name group is supposed to contain this rendition
+                boolean found = false;
+                for (String rendition : streamNameGroup.getRenditions()) {
+                    // xxx todo this is fragile; not every Wowza stream necessarily follows this naming convention
+                    logger.info("LIVEPEER checking if " + stream.getName() + " matches " + streamName + "_" + rendition + ".stream");
+                    if (stream.getName().equals(streamName + "_" + rendition + ".stream")) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    // This rendition isn't in our playlist.
+                    logger.info("LIVEPEER no matches found for " + stream.getName());
+                    continue;
+                }
+                // Create a Rendition entry - you will need multiple of these for each rendition you are adding
+                MediaListRendition newRendition = new MediaListRendition();
+                newRendition.setBitrateAudio(stream.getPublishBitrateAudio());
+                newRendition.setBitrateVideo(stream.getPublishBitrateVideo());
+                newRendition.setWidth(codecInfoVideo.getVideoWidth());
+                newRendition.setHeight(codecInfoVideo.getVideoHeight());
+                newRendition.setName(stream.getName());
+                addedNames.add(stream.getName());
+
+                // Add the rendtion(s) to the segment
+                newSegment.addRendition(newRendition);
+            }
+
+            // Add the segment to the MediaList
+            newList.addSegment(newSegment);
+
+            logger.info("Updated stream name group " + streamGroupName + " with renditions " + addedNames);
+            // Add the medialist to the mapgroup
+            thisMapGroup.setMediaList(newList);
         }
-
-        // Add the segment to the MediaList
-        newList.addSegment(newSegment);
-
-        logger.info("Updated stream name group " + streamGroupName + " with renditions " + streamFileInfos.keySet());
-        // Add the medialist to the mapgroup
-        thisMapGroup.setMediaList(newList);
     }
 
     /**
@@ -554,10 +578,13 @@ public class LivepeerStream extends Thread {
 
     protected void stopStreamNameGroups() {
         MediaStreamMap streams = livepeer.getAppInstance().getStreams();
-        MediaStreamMapGroup thisMapGroup = streams.getNameGroupByGroupName(streamName + "_all");
-        if (thisMapGroup != null)
-        {
-            streams.removeNameGroup(thisMapGroup);
+        for (LivepeerAPIResourceStream.LivepeerAPIResourceStreamWowzaStreamNameGroup streamNameGroup : livepeerStream.getWowza().getStreamNameGroups()) {
+            MediaStreamMapGroup thisMapGroup = streams.getNameGroupByGroupName(streamNameGroup.getName());
+            if (thisMapGroup != null)
+            {
+                logger.info("LIVEPEER removing stream name group " + streamNameGroup.getName());
+                streams.removeNameGroup(thisMapGroup);
+            }
         }
     }
 
