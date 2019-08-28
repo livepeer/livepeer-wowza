@@ -1,0 +1,12 @@
+{
+  "name": "livepeer-wowza",
+  "version": "0.1.1",
+  "description": "Livepeer Wowza plugin",
+  "repository": "git@github.com:livepeer/livepeer-wowza.git",
+  "author": "Livepeer",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "standard-version": "^7.0.0"
+  }
+}
