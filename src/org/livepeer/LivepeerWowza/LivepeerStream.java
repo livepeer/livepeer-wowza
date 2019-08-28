@@ -359,8 +359,9 @@ public class LivepeerStream extends Thread {
             streamConfig.setSrc(stream.getName());
             streamConfig.setVideoBitrate("" + stream.getPublishBitrateVideo());
             streamConfig.setAudioBitrate("" + stream.getPublishBitrateAudio());
-            streamConfig.setVideoCodecId("" + stream.getPublishVideoCodecId());
-            streamConfig.setAudioCodecId("" + stream.getPublishAudioCodecId());
+            // todo fixme xxx these are wrong, we should figure out how to get the right ones:
+            // streamConfig.setVideoCodecId("" + stream.getPublishVideoCodecId());
+            // streamConfig.setAudioCodecId("" + stream.getPublishAudioCodecId());
             streamConfig.setWidth("" + codecInfoVideo.getVideoWidth());
             streamConfig.setHeight("" + codecInfoVideo.getVideoHeight());
             streamConfig.setType("video");
