@@ -2,3 +2,4 @@ LivepeerWowza.jar
 bin
 .idea/workspace.xml
 uploadVersion.json
+node_modules
