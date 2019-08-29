@@ -17,8 +17,11 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -100,24 +103,26 @@ public class LivepeerAPI {
       System.out.println(e);
       throw new RuntimeException(e);
     }
-    // Allow TLSv1 protocol only
+    // Trust Let's Encrypt certs
     SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
             sslcontext,
             new String[]{"TLSv1.1", "TLSv1.2"},
             null,
             SSLConnectionSocketFactory.getDefaultHostnameVerifier());
     List<Header> headers = Arrays.asList(new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + livepeerApiKey));
-//    PoolingHttpClientConnectionManager poolingConnManager
-//            = new PoolingHttpClientConnectionManager();
-//    poolingConnManager.setMaxTotal(100);
-//    poolingConnManager.setDefaultMaxPerRoute(100);
-//    poolingConnManager.setDefaultSocketConfig(SocketConfig.custom().
-//            setSoTimeout(5000).build());
+    Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory> create().register("https", sslsf).build();
+    // Increase maximum number of connections to a given host
+    PoolingHttpClientConnectionManager poolingConnManager
+            = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
+    poolingConnManager.setMaxTotal(100);
+    poolingConnManager.setDefaultMaxPerRoute(10);
+    poolingConnManager.setDefaultSocketConfig(SocketConfig.custom().
+            setSoTimeout(5000).build());
     httpClient = HttpClients.custom()
+            .setConnectionManager(poolingConnManager)
             .setSSLSocketFactory(sslsf)
             .setUserAgent("LivepeerWowza/" + LivepeerVersion.VERSION)
             .setDefaultHeaders(headers)
-//            .setConnectionManager(poolingConnManager)
             .build();
     mapper = new ObjectMapper();
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
