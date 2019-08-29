@@ -17,11 +17,14 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.config.SocketConfig;
+import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContexts;
 
@@ -87,7 +90,6 @@ public class LivepeerAPI {
 
     logger.info("Livepeer API server URL: " + livepeerApiUrl);
 
-    httpClient = HttpClients.createDefault();
     // Trust own CA and all self-signed certs
     SSLContext sslcontext = null;
     try {
@@ -105,10 +107,17 @@ public class LivepeerAPI {
             null,
             SSLConnectionSocketFactory.getDefaultHostnameVerifier());
     List<Header> headers = Arrays.asList(new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + livepeerApiKey));
+//    PoolingHttpClientConnectionManager poolingConnManager
+//            = new PoolingHttpClientConnectionManager();
+//    poolingConnManager.setMaxTotal(100);
+//    poolingConnManager.setDefaultMaxPerRoute(100);
+//    poolingConnManager.setDefaultSocketConfig(SocketConfig.custom().
+//            setSoTimeout(5000).build());
     httpClient = HttpClients.custom()
             .setSSLSocketFactory(sslsf)
             .setUserAgent("LivepeerWowza/" + LivepeerVersion.VERSION)
             .setDefaultHeaders(headers)
+//            .setConnectionManager(poolingConnManager)
             .build();
     mapper = new ObjectMapper();
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

@@ -3,3 +3,5 @@ bin
 .idea/workspace.xml
 uploadVersion.json
 node_modules
+wowza-license
+e2e-test.log

@@ -2,6 +2,7 @@
 
 set -e
 
+touch ./wowza.log
 /sbin/entrypoint.sh | tee ./wowza.log &
 wowzaPid=$!
 

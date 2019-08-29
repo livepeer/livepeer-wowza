@@ -433,7 +433,6 @@ public class LivepeerStream extends Thread {
                 boolean found = false;
                 for (String rendition : streamNameGroup.getRenditions()) {
                     // xxx todo this is fragile; not every Wowza stream necessarily follows this naming convention
-                    logger.info("LIVEPEER checking if " + stream.getName() + " matches " + streamName + "_" + rendition + ".stream");
                     if (stream.getName().equals(streamName + "_" + rendition + ".stream")) {
                         found = true;
                         break;
@@ -441,7 +440,6 @@ public class LivepeerStream extends Thread {
                 }
                 if (!found) {
                     // This rendition isn't in our playlist.
-                    logger.info("LIVEPEER no matches found for " + stream.getName());
                     continue;
                 }
                 // Create a Rendition entry - you will need multiple of these for each rendition you are adding

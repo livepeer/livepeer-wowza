@@ -50,7 +50,8 @@ ADD etc/WowzaStreamingEngine.conf /etc/supervisor/conf.d/WowzaStreamingEngine.co
 ADD etc/WowzaStreamingEngineManager.conf /etc/supervisor/conf.d/WowzaStreamingEngineManager.conf
 ADD etc/Server.xml /usr/local/WowzaStreamingEngine/conf/Server.xml
 ADD etc/Application.xml /usr/local/WowzaStreamingEngine/conf/live/Application.xml
-COPY --from=builder /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar
 RUN curl -o ./official_test_source_2s_keys_24pfs.mp4 https://storage.googleapis.com/lp_testharness_assets/official_test_source_2s_keys_24pfs.mp4
+COPY --from=builder /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar
+ADD ./wowza-license ./wowza-license
 ADD ./wowza-e2e-test.sh ./wowza-e2e-test.sh
-CMD ./wowza-e2e-test.sh
+CMD WSE_LIC="$(cat ./wowza-license)" ./wowza-e2e-test.sh

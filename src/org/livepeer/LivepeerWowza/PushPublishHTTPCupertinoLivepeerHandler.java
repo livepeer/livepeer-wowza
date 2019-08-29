@@ -36,7 +36,6 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
   boolean backup = false;
   String groupName = null;
   private int connectionTimeout = 5000;
-  private int readTimeout = 5000;
 
   public PushPublishHTTPCupertinoLivepeerHandler(String broadcaster, IApplicationInstance appInstance, LivepeerStream livepeerStream) throws LicensingException {
     super();
@@ -78,13 +77,14 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
     LivepeerAPIResourceBroadcaster livepeerBroadcaster = null;
     try {
       PacketFragmentList list = mediaSegment.getFragmentList();
-			LiveStreamPacketizerCupertinoChunk chunkInfo = (LiveStreamPacketizerCupertinoChunk) mediaSegment.getChunkInfoCupertino();
+      LiveStreamPacketizerCupertinoChunk chunkInfo = (LiveStreamPacketizerCupertinoChunk) mediaSegment.getChunkInfoCupertino();
       if (list != null && list.size() != 0) {
         url = livepeerStream.rewriteIdToUrl(httpAddress + "/" + getSegmentUri(mediaSegment));
         livepeerBroadcaster = livepeerStream.getBroadcaster();
         LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
         RequestConfig requestConfig = RequestConfig.custom()
-                .setSocketTimeout(readTimeout)
+                // We're not expecting anything until we send the full segment, so:
+                .setSocketTimeout(Math.toIntExact(chunkInfo.getDuration()) * 3)
                 .setConnectTimeout(connectionTimeout)
                 .setConnectionRequestTimeout(connectionTimeout)
                 .build();

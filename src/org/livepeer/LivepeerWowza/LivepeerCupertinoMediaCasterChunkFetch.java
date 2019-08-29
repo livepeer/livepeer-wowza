@@ -108,8 +108,8 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
                 .build();
         req.setConfig(requestConfig);
         LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
-        HttpResponse res = null;
-        res = httpClient.execute(req);
+        HttpResponse res = httpClient.execute(req);
+        livepeer.getLogger().info("fetchBlock(" + path + ") returned " + res.getStatusLine());
         httpResult.setResultType(CupertinoMediaCasterFetchedResult.dataType);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         res.getEntity().writeTo(baos);
