@@ -31,7 +31,7 @@ RUN apt-get update && apt-get install -y ca-certificates
 COPY --from=installer /go/src/github.com/livepeer/livepeer-wowza/install_livepeer_wowza /install_livepeer_wowza
 RUN /install_livepeer_wowza -apikey abc123
 
-FROM wowzamedia/wowza-streaming-engine-linux@sha256:904d95965cfdbec477a81374fcd22dfc48db1972e690dacb80d2114a8d597f95
+FROM wowzamedia/wowza-streaming-engine-linux@sha256:904d95965cfdbec477a81374fcd22dfc48db1972e690dacb80d2114a8d597f95 as server
 
 COPY --from=installer /go/src/github.com/livepeer/livepeer-wowza/install_livepeer_wowza.linux.tar.gz /usr/local/install_livepeer_wowza.linux.tar.gz
 
@@ -39,6 +39,19 @@ ADD etc/WowzaStreamingEngine.conf /etc/supervisor/conf.d/WowzaStreamingEngine.co
 ADD etc/WowzaStreamingEngineManager.conf /etc/supervisor/conf.d/WowzaStreamingEngineManager.conf
 ADD etc/Server.xml /usr/local/WowzaStreamingEngine/conf/Server.xml
 ADD etc/Application.xml /usr/local/WowzaStreamingEngine/conf/live/Application.xml
-
 COPY --from=builder /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar
 RUN chown wowza:wowza /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar && chmod 775 /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar
+
+FROM wowzamedia/wowza-streaming-engine-linux@sha256:904d95965cfdbec477a81374fcd22dfc48db1972e690dacb80d2114a8d597f95 as tester
+
+WORKDIR /wowza-testing
+RUN apt-get update && apt-get install -y ca-certificates curl ffmpeg bc
+ADD etc/WowzaStreamingEngine.conf /etc/supervisor/conf.d/WowzaStreamingEngine.conf
+ADD etc/WowzaStreamingEngineManager.conf /etc/supervisor/conf.d/WowzaStreamingEngineManager.conf
+ADD etc/Server.xml /usr/local/WowzaStreamingEngine/conf/Server.xml
+ADD etc/Application.xml /usr/local/WowzaStreamingEngine/conf/live/Application.xml
+RUN curl -o ./official_test_source_2s_keys_24pfs.mp4 https://storage.googleapis.com/lp_testharness_assets/official_test_source_2s_keys_24pfs.mp4
+COPY --from=builder /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar
+ADD ./wowza-license ./wowza-license
+ADD ./wowza-e2e-test.sh ./wowza-e2e-test.sh
+CMD WSE_LIC="$(cat ./wowza-license)" ./wowza-e2e-test.sh

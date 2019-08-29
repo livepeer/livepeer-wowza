@@ -1,0 +1,36 @@
+# docker run\
+#   -it\
+#   --name [container-name]\
+#   --restart always\
+#   --volume /Users/me/Documents/logs:/usr/local/WowzaStreamingEngine/logs\
+#   --entrypoint \
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: wowza-tester
+spec:
+  # selector:
+  #   matchLabels:
+  #     app: wowza-tester
+  template:
+    # metadata:
+    #   labels:
+    #     app: wowza-tester
+    spec:
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 1
+      containers:
+        - name: wowza-tester
+          image: iameli/wowza-tester
+          imagePullPolicy: Always
+          env:
+            - name: WSE_MGR_USER
+              value: livepeer
+            - name: WSE_MGR_PASS
+              value: password
+            - name: WSE_LIC
+              valueFrom:
+                secretKeyRef:
+                  name: wowza
+                  key: license
