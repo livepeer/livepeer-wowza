@@ -22,6 +22,7 @@ import org.apache.http.config.RegistryBuilder;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -110,7 +111,10 @@ public class LivepeerAPI {
             null,
             SSLConnectionSocketFactory.getDefaultHostnameVerifier());
     List<Header> headers = Arrays.asList(new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + livepeerApiKey));
-    Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory> create().register("https", sslsf).build();
+    Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory> create()
+            .register("https", sslsf)
+            .register("http", new PlainConnectionSocketFactory())
+            .build();
     // Increase maximum number of connections to a given host
     PoolingHttpClientConnectionManager poolingConnManager
             = new PoolingHttpClientConnectionManager(socketFactoryRegistry);

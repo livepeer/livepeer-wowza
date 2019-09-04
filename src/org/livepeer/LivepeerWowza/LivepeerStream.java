@@ -432,8 +432,7 @@ public class LivepeerStream extends Thread {
                 // Check to see if our stream name group is supposed to contain this rendition
                 boolean found = false;
                 for (String rendition : streamNameGroup.getRenditions()) {
-                    // xxx todo this is fragile; not every Wowza stream necessarily follows this naming convention
-                    if (stream.getName().equals(streamName + "_" + rendition + ".stream")) {
+                    if (stream.getName().equals(rendition + ".stream")) {
                         found = true;
                         break;
                     }
@@ -472,7 +471,7 @@ public class LivepeerStream extends Thread {
         streamFiles.loadObject();
         Map<String, String> streamFilesMustExist = new HashMap<>();
         for (String renditionName : livepeerStream.getRenditions().keySet()) {
-            streamFilesMustExist.put(streamName + "_" + renditionName, this.id + livepeerStream.getRenditions().get(renditionName));
+            streamFilesMustExist.put(renditionName, this.id + livepeerStream.getRenditions().get(renditionName));
         }
         logger.info("LIVEPEER ensuring these renditions exist: " + streamFilesMustExist);
         this.activeStreamFiles = streamFilesMustExist.keySet();

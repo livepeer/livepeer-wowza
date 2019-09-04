@@ -84,6 +84,13 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		}
 	}
 
+	class PacketListener implements IMediaStreamLivePacketNotify {
+		@Override
+		public void onLivePacket(IMediaStream stream, AMFPacket packet) {
+//			getLogger().info("LIVEPEER_PACKET name="+stream.getName());
+		}
+	}
+
 	/**
 	 * Find the LivepeerStream that is handling this incoming transcoded rendition, if any
 	 * @param streamName name of incoming stream
@@ -124,6 +131,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		appInstance.getLiveStreamPacketizerProperties().setProperty("cupertinoPlaylistChunkCount", "12");
 
 		stream.addClientListener(actionNotify);
+		stream.addLivePacketListener(new PacketListener());
 		getLogger().info("LIVEPEER onStreamCreate[" + stream + "]: clientId:" + stream.getClientId());
 		getLogger().info("LIVEPEER onStreamCreate stream=" + stream.isPublisherStream());
 	}

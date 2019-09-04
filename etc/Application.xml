@@ -41,7 +41,7 @@
 			<!-- To turn on transcoder set to: transcoder -->
 			<LiveStreamTranscoder>transcoder</LiveStreamTranscoder>
 			<!-- [templatename].xml or ${SourceStreamName}.xml -->
-			<Templates>${SourceStreamName}.xml,transrate.xml</Templates>
+			<Templates>${SourceStreamName}.xml,lp_transcode.xml</Templates>
 			<ProfileDir>${com.wowza.wms.context.VHostConfigHome}/transcoder/profiles</ProfileDir>
 			<TemplateDir>${com.wowza.wms.context.VHostConfigHome}/transcoder/templates</TemplateDir>
 			<Properties>
@@ -243,7 +243,7 @@
 			</Property>
 			<Property>
 				<Name>livepeer.org/api-server-url</Name>
-				<Value>https://livepeer.live/api</Value>
+				<Value>http://10.9.168.100:8080/api</Value>
 				<Type>String</Type>
 			</Property>
 			<Property>
