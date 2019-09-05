@@ -39,6 +39,7 @@ ADD etc/WowzaStreamingEngine.conf /etc/supervisor/conf.d/WowzaStreamingEngine.co
 ADD etc/WowzaStreamingEngineManager.conf /etc/supervisor/conf.d/WowzaStreamingEngineManager.conf
 ADD etc/Server.xml /usr/local/WowzaStreamingEngine/conf/Server.xml
 ADD etc/Application.xml /usr/local/WowzaStreamingEngine/conf/live/Application.xml
+ADD etc/lp_transcode.xml /usr/local/WowzaStreamingEngine/transcoder/templates/lp_transcode.xml
 COPY --from=builder /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar
 RUN chown wowza:wowza /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar && chmod 775 /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar
 
