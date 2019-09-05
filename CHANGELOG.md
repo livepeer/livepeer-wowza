@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.4](https://github.com/livepeer/livepeer-wowza/compare/0.1.3...0.1.4) (2019-09-05)
+
+
+### Bug Fixes
+
+* **wowza:** handle more creative transcode rendition names ([96c92cb](https://github.com/livepeer/livepeer-wowza/commit/96c92cb))
+
+
+### Features
+
+* **wowza:** implement stream duplication for stream targets ([9b7100c](https://github.com/livepeer/livepeer-wowza/commit/9b7100c))
+
 ### [0.1.3](https://github.com/livepeer/livepeer-wowza/compare/0.1.2...0.1.3) (2019-08-29)
 
 
