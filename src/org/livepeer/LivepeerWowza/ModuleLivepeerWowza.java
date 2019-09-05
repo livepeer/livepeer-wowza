@@ -87,7 +87,16 @@ public class ModuleLivepeerWowza extends ModuleBase {
 	class PacketListener implements IMediaStreamLivePacketNotify {
 		@Override
 		public void onLivePacket(IMediaStream stream, AMFPacket packet) {
-//			getLogger().info("LIVEPEER_PACKET name="+stream.getName());
+		    String streamName = stream.getName();
+		    // We only care about copying over stream file results for this
+            if (streamName == null || !streamName.endsWith(".stream")) {
+                return;
+            }
+            LivepeerStream manager = findStreamManager(streamName);
+            if (manager == null) {
+                return;
+            }
+            manager.onPacket(stream, packet);
 		}
 	}
 
@@ -97,15 +106,16 @@ public class ModuleLivepeerWowza extends ModuleBase {
 	 * @return LivepeerStream in charge of this rendition or null if not found
 	 */
 	public LivepeerStream findStreamManager(String streamName) {
-		// Avoid an infinite loop - if this new stream is a transcoded rendition, don't transcode again
+		// Avoid an infinite loop - if this new stream is a transcoded rendition or one of our streamfiles,
+        // don't transcode again
 		if (streamName.endsWith(".stream")) {
-			String streamFileName = streamName.substring(0, streamName.length() - 7);
-			for (LivepeerStream livepeerStream : livepeerStreams.values()) {
-				if (livepeerStream.managesStreamFile(streamFileName)) {
-					return livepeerStream;
-				}
-			}
+            streamName = streamName.substring(0, streamName.length() - 7);
 		}
+        for (LivepeerStream livepeerStream : livepeerStreams.values()) {
+            if (livepeerStream.managesStreamFile(streamName)) {
+                return livepeerStream;
+            }
+        }
 		return null;
 	}
 

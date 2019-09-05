@@ -1,5 +1,6 @@
 package org.livepeer.LivepeerWowza;
 
+import com.wowza.wms.amf.AMFPacket;
 import com.wowza.wms.application.IApplicationInstance;
 import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.media.model.MediaCodecInfoVideo;
@@ -20,6 +21,8 @@ import com.wowza.wms.server.LicensingException;
 import com.wowza.wms.stream.IMediaStream;
 import com.wowza.wms.stream.MediaStreamMap;
 import com.wowza.wms.stream.MediaStreamMapGroup;
+import com.wowza.wms.stream.publish.Publisher;
+import com.wowza.wms.vhost.IVHost;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
@@ -81,6 +84,7 @@ public class LivepeerStream extends Thread {
     private PushPublishHTTPCupertinoLivepeerHandler hlsPush;
     private Set<String> activeStreamFiles = new HashSet<>();
     private Map<String, StreamFileInfo> streamFileInfos = new HashMap<>();
+    private Map<String, Publisher> duplicateStreamPublishers = new HashMap<String, Publisher>();
 
     private Timer smilTimer;
 
@@ -181,6 +185,7 @@ public class LivepeerStream extends Thread {
         // Start HLS pulling via Stream Files
         this.startStreamFiles();
         this.startSmilFile();
+        this.startDuplicateStreams();
 
         logger.info(streamName + " start() succeeded");
 
@@ -290,6 +295,7 @@ public class LivepeerStream extends Thread {
         this.stopStreamFiles();
         this.stopSmilFile();
         this.stopStreamNameGroups();
+        this.stopDuplicateStreams();
         livepeerStreams.remove(this.id);
         // This flag being false implies this was an external call and we need to shut down the thread.
         if (!isShuttingDown) {
@@ -318,8 +324,41 @@ public class LivepeerStream extends Thread {
      * @param newInfo   codec information
      */
     public synchronized void onStreamFileCodecInfoVideo(IMediaStream newStream, MediaCodecInfoVideo newInfo) {
-        streamFileInfos.put(newStream.getName(), new StreamFileInfo(newStream, newInfo));
+        String streamName = newStream.getName();
+        // We only care about the direct results from the Livepeer API for these, not the dupes
+        if (!streamName.endsWith(".stream")) {
+            return;
+        }
+        streamFileInfos.put(streamName, new StreamFileInfo(newStream, newInfo));
         this.updateSmilFile();
+    }
+
+    public void onPacket(IMediaStream stream, AMFPacket packet) {
+        String streamName = stream.getName();
+        if (!streamName.endsWith(".stream")) {
+            logger.error("LIVEPEER onPacket called for non-streamfile " + streamName);
+            return;
+        }
+        streamName = streamName.substring(0, streamName.length() - 7);
+        Publisher publisher = duplicateStreamPublishers.get(streamName);
+        if (publisher == null) {
+            logger.error("LIVEPEER couldn't find publisher for " + streamName);
+            return;
+        }
+        switch (packet.getType())
+        {
+            case IVHost.CONTENTTYPE_AUDIO:
+                publisher.addAudioData(packet.getData(), packet.getAbsTimecode());
+                break;
+
+            case IVHost.CONTENTTYPE_VIDEO:
+                publisher.addVideoData(packet.getData(), packet.getAbsTimecode());
+                break;
+
+            case IVHost.CONTENTTYPE_DATA:
+            case IVHost.CONTENTTYPE_DATA3:
+                publisher.addDataData(packet.getData(), packet.getAbsTimecode());
+        }
     }
 
     /**
@@ -595,6 +634,33 @@ public class LivepeerStream extends Thread {
         SMILFileAppConfig smilFile = new SMILFileAppConfig(vHostName, applicationName, smilFileName);
         smilFile.loadObject();
         smilFile.deleteObject();
+    }
+
+    /**
+     * Start all duplicated streams; these exist for the purpose of Stream Targets and whatnot finding
+     * the names that they expect
+     */
+    protected void startDuplicateStreams() {
+        IApplicationInstance appInstance = livepeer.getAppInstance();
+        for (String renditionName : livepeerStream.getRenditions().keySet()) {
+            Publisher publisher = Publisher.createInstance(appInstance.getVHost(), applicationName, appInstanceName);
+            duplicateStreamPublishers.put(renditionName, publisher);
+            publisher.setStreamType(stream.getStreamType());
+            publisher.publish(renditionName);
+            logger.info("LIVEPEER published duplicate stream: " + renditionName);
+        }
+    }
+
+    protected void stopDuplicateStreams() {
+        for (String renditionName : livepeerStream.getRenditions().keySet()) {
+            Publisher publisher = duplicateStreamPublishers.get(renditionName);
+            if (publisher == null) {
+                continue;
+            }
+            publisher.unpublish();
+            logger.info("LIVEPEER unpublished duplicate stream: " + renditionName);
+            duplicateStreamPublishers.remove(renditionName);
+        }
     }
 
     protected void stopStreamNameGroups() {
