@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -16,6 +17,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/jbowtie/gokogiri"
 	"github.com/jbowtie/gokogiri/xml"
+	"github.com/manifoldco/promptui"
+	"github.com/mattn/go-isatty"
 )
 
 type version struct {
@@ -25,10 +28,16 @@ type version struct {
 
 func main() {
 	flag.Set("logtostderr", "true")
+	application := flag.String("application", "", "comma separated list of applications on server to update")
 	wowzaDir := flag.String("wowzaDir", "", "path to WowzaStreamingEngine folder")
 	channel := flag.String("channel", "latest", "branch name for latest version of JAR file")
 	apiKey := flag.String("apikey", "", "livepeer api key")
 	flag.Parse()
+
+	terminal := false
+	if isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+		terminal = true
+	}
 
 	// Set wowza default directory appropriate for each operating system
 	if *wowzaDir == "" {
@@ -51,7 +60,7 @@ func main() {
 
 	_, err := os.Stat(serverFilePath)
 	if err == nil {
-		key, err := findAndSaveAPIKey(serverFilePath, *apiKey)
+		key, err := findAndSaveAPIKey(serverFilePath, *apiKey, terminal)
 		if err != nil {
 			panic(err)
 		}
@@ -66,14 +75,56 @@ func main() {
 		panic(err)
 	}
 
-	// Insert Livepeer Wowza module information into all Application.xml files
-	err = filepath.Walk(*wowzaDir, insertLivepeerWowzaModule)
+	// If user has not set the application flag, find all existing application names
+	appPaths := []string{}
+	if *application == "" {
+		apps, _ := ioutil.ReadDir(filepath.Join(*wowzaDir, "applications/"))
+		for _, app := range apps {
+			appPaths = append(appPaths, app.Name())
+		}
+		*application = strings.Join(appPaths, ",")
+	}
+
+	// Prompt user to confirm applications to update
+	err = promptUserForInsertLocation(*application)
 	if err != nil {
 		panic(err)
 	}
+
+	// Insert Livepeer Wowza module information into selected Application.xml files
+	apps := strings.Split(*application, ",")
+	for _, app := range apps {
+		updatePath := filepath.Join(*wowzaDir, "conf/", app)
+		err = filepath.Walk(updatePath, insertLivepeerWowzaModule)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
-func findAndSaveAPIKey(serverFilePath string, apiKey string) (string, error) {
+func promptUserForInsertLocation(apps string) error {
+	prompt := promptui.Select{
+		Label: fmt.Sprintf(`Would you like to install the Wowza Livepeer Module in these locations?: [%s]`, apps),
+		Items: []string{"Yes", "No"},
+	}
+
+	_, result, err := prompt.Run()
+
+	if err != nil {
+		return err
+	}
+
+	if result == "No" {
+		err := errors.New(`
+		No application selected. Please re-run script with the '-application' flag,
+		and provide comma separated list of applications to update with Livepeer module`)
+		return err
+	}
+
+	return nil
+}
+
+func findAndSaveAPIKey(serverFilePath string, apiKey string, terminal bool) (string, error) {
 	// Create searchable xml document
 	doc, err := createSearchableXMLDocument(serverFilePath)
 	if err != nil {
@@ -90,42 +141,47 @@ func findAndSaveAPIKey(serverFilePath string, apiKey string) (string, error) {
 		return "", fmt.Errorf("<Properties> tag not found %v", err)
 	}
 
+	var valueNodes []xml.Node
 	for _, propertiesNode := range propertiesNodes {
 		nodes, err := propertiesNode.Search("Property[Name='livepeer.org/api-key']")
 		if err != nil {
 			return "", fmt.Errorf("Property node search error: %v", err)
 		}
 		if len(nodes) > 0 {
-			valueNodes, err := nodes[0].Search("Value")
+			valueNodes, err = nodes[0].Search("Value")
 			if err != nil {
 				return "", fmt.Errorf("Searching for Value error: %v", err)
 			}
 			apiKey = valueNodes[0].InnerHtml()
 			fmt.Printf("Livepeer API key in Server.XML: %s\n", apiKey)
+		}
+	}
+
+	if apiKey == "" && terminal {
+		// If apiKey not found, prompt user for API key
+		apiKey = promptUserForAPIKey(apiKey)
+		// Add API key to XML document
+		propertiesNodes[0].AddChild(fmt.Sprintf(
+			`	<Property>
+					<Name>livepeer.org/api-key</Name>
+					<Value>%s</Value>
+					<Type>String</Type>
+				</Property>
+			`, apiKey))
+	} else if terminal {
+		key := promptUserChangeAPIKey()
+		if key == "" {
 			return apiKey, nil
 		}
+		apiKey = key
+		// Add new API key to XML document
+		valueNodes[0].SetInnerHtml(apiKey)
 	}
 
 	if apiKey == "" {
-		// If apiKey not found, prompt user for API key
-		for apiKey == "" {
-			apiKey = promptUserForAPIKey()
-
-			// TODO: check for valid API key in the future
-			if apiKey == "" {
-				glog.Error("Invalid API key provided")
-				continue
-			}
-		}
+		fmt.Printf("Failed to write API key, no key saved or provided \n")
+		return "", nil
 	}
-	// Add API key to XML document
-	propertiesNodes[0].AddChild(fmt.Sprintf(
-		`	<Property>
-				<Name>livepeer.org/api-key</Name>
-				<Value>%s</Value>
-				<Type>String</Type>
-			</Property>
-		`, apiKey))
 
 	err = ioutil.WriteFile(serverFilePath, []byte(doc.String()), 0644)
 	if err != nil {
@@ -160,11 +216,44 @@ func createSearchableXMLDocument(filePath string) (*xml.XmlDocument, error) {
 	return doc, nil
 }
 
-func promptUserForAPIKey() string {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("No API key provided - please enter your Livepeer API key: ")
-	key, _ := reader.ReadString('\n')
-	return strings.Trim(key, "\n")
+func promptUserForAPIKey(apiKey string) string {
+	// If apiKey not found, prompt user for API key
+	for apiKey == "" {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("No API key provided - please enter your Livepeer API key: ")
+		apiKey, _ = reader.ReadString('\n')
+		apiKey = strings.Trim(apiKey, "\n")
+
+		// TODO: check for valid API key in the future
+		if apiKey == "" {
+			glog.Error("Invalid API key provided")
+			continue
+		} else {
+			break
+		}
+	}
+	return strings.Trim(apiKey, "\n")
+}
+
+func promptUserChangeAPIKey() string {
+	apiKey := ""
+	resp := ""
+	for {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("API key already provided - would you like to enter a new Livepeer API key? (y/n)")
+		resp, _ = reader.ReadString('\n')
+		resp = strings.Trim(resp, "\n")
+
+		if resp == "y" {
+			apiKey = promptUserForAPIKey("")
+			break
+		} else if resp == "n" {
+			break
+		} else {
+			glog.Error("Invalid option selected. Please enter either 'y' or 'n'")
+		}
+	}
+	return apiKey
 }
 
 func downloadLatestJarFile(channel string, wowzaDir string) error {
