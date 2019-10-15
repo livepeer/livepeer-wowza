@@ -36,14 +36,6 @@ public class ModuleLivepeerWowza extends ModuleBase {
 			livepeerStream.start();
 		}
 
-		public void onStop(IMediaStream stream) {
-			LivepeerStream livepeerStream = livepeerStreams.get(stream.getName());
-			if (livepeerStream != null) {
-				livepeerStream.stopStream();
-				livepeerStreams.remove(stream.getName());
-			}
-		}
-
 		public void onUnPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
 			LivepeerStream livepeerStream = livepeerStreams.get(stream.getName());
 			if (livepeerStream != null) {
@@ -61,6 +53,8 @@ public class ModuleLivepeerWowza extends ModuleBase {
 			}
 			manager.onStreamFileCodecInfoVideo(stream, codecInfoVideo);
 		}
+
+		public void onStop(IMediaStream stream) {}
 
 		public void onMetaData(IMediaStream stream, AMFPacket metaDataPacket) {}
 
