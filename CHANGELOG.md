@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.5](https://github.com/livepeer/livepeer-wowza/compare/0.1.4...0.1.5) (2019-10-21)
+
+
+### Bug Fixes
+
+* **wowza:** don't stop the transcode stream on the "stop" action ([2dcff21](https://github.com/livepeer/livepeer-wowza/commit/2dcff21)), closes [#39](https://github.com/livepeer/livepeer-wowza/issues/39)
+
 ### [0.1.4](https://github.com/livepeer/livepeer-wowza/compare/0.1.3...0.1.4) (2019-09-05)
 
 
