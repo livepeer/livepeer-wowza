@@ -91,7 +91,10 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
         HttpPut req = new HttpPut(url);
         req.setConfig(requestConfig);
         req.setEntity(entity);
+        int width = chunkInfo.getCodecInfoVideo().getVideoWidth();
+        int height = chunkInfo.getCodecInfoVideo().getVideoHeight();
         req.setHeader("Content-Duration", "" + chunkInfo.getDuration());
+        req.setHeader("Content-Resolution", "" + width + "x" + height);
         HttpResponse res = httpClient.execute(req);
         int status = res.getStatusLine().getStatusCode();
         size = entity.getSize();
