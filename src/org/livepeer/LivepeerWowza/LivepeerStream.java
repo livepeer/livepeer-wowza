@@ -104,21 +104,6 @@ public class LivepeerStream extends Thread {
     }
 
     /**
-     * Given a `livepeer-${uuid}` string, return an actual HTTP url of a broadcaster. If it's passed
-     * a non-Livepeer URL, it returns the string unchanged;
-     *
-     * @param url
-     * @return
-     */
-    public static String rewriteUrl(String url) {
-        LivepeerStream livepeerStream = LivepeerStream.getFromUrl(url);
-        if (livepeerStream == null) {
-            return url;
-        }
-        return livepeerStream.rewriteIdToUrl(url);
-    }
-
-    /**
      * Create a Livepeer stream. We'll need the stream, its name, and a LivepeerAPI instance
      *
      * @param stream     the stream
@@ -510,7 +495,7 @@ public class LivepeerStream extends Thread {
         streamFiles.loadObject();
         Map<String, String> streamFilesMustExist = new HashMap<>();
         for (String renditionName : livepeerStream.getRenditions().keySet()) {
-            streamFilesMustExist.put(renditionName, this.id + livepeerStream.getRenditions().get(renditionName));
+            streamFilesMustExist.put(renditionName, livepeer.getLivepeerHost() + livepeerStream.getRenditions().get(renditionName));
         }
         logger.info("LIVEPEER ensuring these renditions exist: " + streamFilesMustExist);
         this.activeStreamFiles = streamFilesMustExist.keySet();

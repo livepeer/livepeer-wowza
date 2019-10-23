@@ -95,6 +95,8 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
         HttpResponse res = httpClient.execute(req);
         int status = res.getStatusLine().getStatusCode();
         size = entity.getSize();
+        // Uncomment this line to use a new broadcaster for each segment. Useful for testing.
+        // livepeerStream.notifyBroadcasterProblem(livepeerBroadcaster);
         if (status < 200 || status >= 300)
           size = 0;
       } else
