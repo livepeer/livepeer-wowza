@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.6](https://github.com/livepeer/livepeer-wowza/compare/0.1.5...0.1.6) (2019-10-23)
+
+
+### Bug Fixes
+
+* **wowza:** add content-resolution http header ([20d6f90](https://github.com/livepeer/livepeer-wowza/commit/20d6f90))
+* **wowza:** use api-generated stream urls, reduces stuttering ([0e38564](https://github.com/livepeer/livepeer-wowza/commit/0e38564))
+
 ### [0.1.5](https://github.com/livepeer/livepeer-wowza/compare/0.1.4...0.1.5) (2019-10-21)
 
 
