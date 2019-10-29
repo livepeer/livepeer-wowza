@@ -26,9 +26,9 @@
 #EXTINF:1.667,
 https://aks-default-16253462-vmss000002.livepeer.live/live/7abb1446-aca2-4220-b9f0-c7ac35cdcbee/1.ts
 #EXTINF:1.666,
-https://aks-default-16253462-vmss000001.livepeer.live/live/7abb1446-aca2-4220-b9f0-c7ac35cdcbee/1.ts
+https://aks-default-16253462-vmss000001.livepeer.live/live/7abb1446-aca2-4220-b9f0-c7ac35cdcbee/2.ts
 #EXTINF:2.000,
-https://aks-default-16253462-vmss000000.livepeer.live/live/7abb1446-aca2-4220-b9f0-c7ac35cdcbee/1.ts
+https://aks-default-16253462-vmss000000.livepeer.live/live/7abb1446-aca2-4220-b9f0-c7ac35cdcbee/3.ts
 ```
 
 * (Note that the broadcaster servers can change from segment to segment, providing one coherent stream even if LivepeerWowza switches broadcasters.)
