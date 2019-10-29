@@ -130,9 +130,9 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 		// recommended settings for lower-latency streaming from here:
 		// https://www.wowza.com/docs/how-to-improve-playback-of-lower-latency-apple-hls-streams
-		appInstance.getLiveStreamPacketizerProperties().setProperty("cupertinoChunkDurationTarget", "1000");
-		appInstance.getLiveStreamPacketizerProperties().setProperty("cupertinoMaxChunkCount", "100");
-		appInstance.getLiveStreamPacketizerProperties().setProperty("cupertinoPlaylistChunkCount", "12");
+//		appInstance.getLiveStreamPacketizerProperties().setProperty("cupertinoChunkDurationTarget", "1000");
+//		appInstance.getLiveStreamPacketizerProperties().setProperty("cupertinoMaxChunkCount", "100");
+//		appInstance.getLiveStreamPacketizerProperties().setProperty("cupertinoPlaylistChunkCount", "12");
 
 		stream.addClientListener(actionNotify);
 		stream.addLivePacketListener(new PacketListener());
