@@ -34,7 +34,7 @@
 			</Encode>
 			<!-- Setup for 720p, high bandwith, main profile for desktop or set-top box -->
 			<Encode>
-				<Enable>false</Enable>
+				<Enable>true</Enable>
 				<Name>720p</Name>
 				<StreamName>mp4:${SourceStreamName}_720p</StreamName>
 				<Video>
