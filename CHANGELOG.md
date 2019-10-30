@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.7](https://github.com/livepeer/livepeer-wowza/compare/0.1.6...0.1.7) (2019-10-30)
+
+
+### Bug Fixes
+
+* **wowza:** stream groups recover from stream reconnect ([aab863d](https://github.com/livepeer/livepeer-wowza/commit/aab863d))
+* **wowza:** tweak maximum HLS playlist sizes ([786e2e4](https://github.com/livepeer/livepeer-wowza/commit/786e2e4))
+
 ### [0.1.6](https://github.com/livepeer/livepeer-wowza/compare/0.1.5...0.1.6) (2019-10-23)
 
 
