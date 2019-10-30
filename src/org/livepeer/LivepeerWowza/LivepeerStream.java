@@ -538,7 +538,7 @@ public class LivepeerStream extends Thread {
             streamFileAdv.loadObject();
             AdvancedSetting s = streamFileAdv.getAdvSetting("CupertinoHLS", "cupertinoManifestMaxBufferBlockCount");
             s.setEnabled(true);
-            s.setValue("35");
+            s.setValue("50");
             s = streamFileAdv.getAdvSetting("CupertinoHLS", "cupertinoManifestBufferBlockCount");
             s.setEnabled(true);
             s.setValue("4");
