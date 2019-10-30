@@ -364,7 +364,6 @@ public class LivepeerStream extends Thread {
         // Do we need to update the SMILFile?
         boolean needsUpdate = false;
         // Do we need to set a timer to wait until we have bitrate data?
-        boolean needsTimer = false;
         for (StreamFileInfo info : streamFileInfos.values()) {
             IMediaStream stream = info.getStream();
             MediaCodecInfoVideo codecInfoVideo = info.getCodecInfoVideo();
@@ -374,7 +373,7 @@ public class LivepeerStream extends Thread {
             }
             if (stream.getPublishBitrateVideo() == -1 || stream.getPublishBitrateAudio() == -1) {
                 // We don't yet have a bitrate for this stream, wait till we do
-                needsTimer = true;
+                this.triggerSmilTimer();
                 continue;
             }
             needsUpdate = true;
@@ -392,11 +391,6 @@ public class LivepeerStream extends Thread {
             streamConfig.setSmilfileName(smilFileName);
             smilFile.getStreams().add(streamConfig);
         }
-        // Only set a timer if one isn't already set, you dingus
-        if (needsTimer && this.smilTimer == null) {
-            smilTimer = new Timer();
-            smilTimer.schedule(new UpdateSmilTask(), SMIL_CHECK_INTERVAL);
-        }
         if (needsUpdate) {
             try {
                 smilFile.saveObject();
@@ -406,6 +400,17 @@ public class LivepeerStream extends Thread {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * Idempotent function to kick off the timer that waits until we have bitrate information
+     */
+    protected void triggerSmilTimer() {
+        if (smilTimer != null) {
+            return;
+        }
+        smilTimer = new Timer();
+        smilTimer.schedule(new UpdateSmilTask(), SMIL_CHECK_INTERVAL);
     }
 
     /**
@@ -451,6 +456,7 @@ public class LivepeerStream extends Thread {
                 MediaCodecInfoVideo codecInfoVideo = info.getCodecInfoVideo();
                 if (stream.getPublishBitrateVideo() == -1 || stream.getPublishBitrateAudio() == -1) {
                     // We don't yet have a bitrate for this stream, wait till we do
+                    this.triggerSmilTimer();
                     continue;
                 }
                 // Check to see if our stream name group is supposed to contain this rendition

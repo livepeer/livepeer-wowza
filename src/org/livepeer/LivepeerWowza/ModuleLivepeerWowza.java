@@ -105,11 +105,11 @@ public class ModuleLivepeerWowza extends ModuleBase {
 		if (streamName.endsWith(".stream")) {
             streamName = streamName.substring(0, streamName.length() - 7);
 		}
-        for (LivepeerStream livepeerStream : livepeerStreams.values()) {
-            if (livepeerStream.managesStreamFile(streamName)) {
-                return livepeerStream;
-            }
-        }
+		for (LivepeerStream livepeerStream : livepeerStreams.values()) {
+				if (livepeerStream.managesStreamFile(streamName)) {
+						return livepeerStream;
+				}
+		}
 		return null;
 	}
 
