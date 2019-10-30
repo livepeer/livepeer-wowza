@@ -47,13 +47,16 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
                 .build();
         req.setConfig(requestConfig);
         LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
+        long start = System.currentTimeMillis();
         HttpResponse res = httpClient.execute(req);
+        double elapsed = (System.currentTimeMillis() - start) / (double) 1000;
         String responseString = new BasicResponseHandler().handleResponse(res);
         String outputString = fixAbsoluteUrls(responseString, path);
         httpResult.setResultString(outputString);
         httpResult.setResultType(CupertinoMediaCasterFetchedResult.textType);
         httpResult.setTimedOut(false);
         httpResult.setResultCode(200);
+        livepeer.getLogger().info("canonical-log-line function=fetchManifest elapsed=" + elapsed + " url=" + path + " status=" + res.getStatusLine());
         return httpResult;
       } catch (IOException e) {
         livepeer.getLogger().error("GET " + path + " failed, retry #" + i + ": "+ e.getMessage());
@@ -106,7 +109,9 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
                 .build();
         req.setConfig(requestConfig);
         LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
+        long start = System.currentTimeMillis();
         HttpResponse res = httpClient.execute(req);
+        double elapsed = (System.currentTimeMillis() - start) / (double) 1000;
         livepeer.getLogger().info("fetchBlock(" + path + ") returned " + res.getStatusLine());
         httpResult.setResultType(CupertinoMediaCasterFetchedResult.dataType);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -114,6 +119,7 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
         httpResult.setDataBlock(baos.toByteArray());
         httpResult.setTimedOut(false);
         httpResult.setResultCode(200);
+        livepeer.getLogger().info("canonical-log-line function=fetchManifest elapsed=" + elapsed + " url=" + path + " status=" + res.getStatusLine());
         return httpResult;
       } catch (IOException e) {
         livepeer.getLogger().error("GET " + path + " failed, retry #" + i + ": "+ e.getMessage());

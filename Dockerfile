@@ -33,6 +33,11 @@ RUN /install_livepeer_wowza -apikey abc123
 
 FROM wowzamedia/wowza-streaming-engine-linux@sha256:904d95965cfdbec477a81374fcd22dfc48db1972e690dacb80d2114a8d597f95 as server
 
+RUN apt-get update \
+  && apt-get install -y software-properties-common \
+  && add-apt-repository ppa:jonathonf/ffmpeg-4 \
+  && apt-get install -y ffmpeg
+
 COPY --from=installer /go/src/github.com/livepeer/livepeer-wowza/install_livepeer_wowza.linux.tar.gz /usr/local/install_livepeer_wowza.linux.tar.gz
 
 ADD etc/WowzaStreamingEngine.conf /etc/supervisor/conf.d/WowzaStreamingEngine.conf

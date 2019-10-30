@@ -93,13 +93,16 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
         req.setEntity(entity);
         int width = chunkInfo.getCodecInfoVideo().getVideoWidth();
         int height = chunkInfo.getCodecInfoVideo().getVideoHeight();
+        String resolution = width + "x" + height;
         req.setHeader("Content-Duration", "" + chunkInfo.getDuration());
-        req.setHeader("Content-Resolution", "" + width + "x" + height);
+        req.setHeader("Content-Resolution", resolution);
+        long start = System.currentTimeMillis();
         HttpResponse res = httpClient.execute(req);
+        double elapsed = (System.currentTimeMillis() - start) / (double) 1000;
         int status = res.getStatusLine().getStatusCode();
         size = entity.getSize();
+        logger.info("canonical-log-line function=sendMediaSegment elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (chunkInfo.getDuration() / (double) 1000) + " resolution=" + resolution + " size=" + size);
         // Uncomment this line to use a new broadcaster for each segment. Useful for testing.
-        // livepeerStream.notifyBroadcasterProblem(livepeerBroadcaster);
         if (status < 200 || status >= 300)
           size = 0;
       } else
