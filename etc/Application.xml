@@ -192,11 +192,6 @@
 		<HTTPStreamer>
 			<!-- Properties defined here will override any properties defined in conf/HTTPStreamers.xml for any HTTPStreamer loaded by this applications -->
 			<Properties>
-				<Property>
-					<Name>httpOriginMode</Name>
-					<Value>on</Value>
-					<Type>String</Type>
-				</Property>
 			</Properties>
 		</HTTPStreamer>
 		<Manager>
