@@ -1,6 +1,7 @@
 package org.livepeer.LivepeerWowza;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wowza.wms.rest.ConfigBase;
 import com.wowza.wms.rest.ShortObject;
@@ -26,9 +27,13 @@ public class LivepeerAPIResourceStream {
   public final static String LIVEPEER_PREFIX = "livepeer_";
 
   LivepeerAPIResourceStreamWowza wowza = new LivepeerAPIResourceStreamWowza();
+  // Don't push up a null id on the initial create
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private String id;
   private String name;
   private List<String> presets = new ArrayList<String>();
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private List<String> errors;
   private Map<String, String> renditions = new HashMap<String, String>();
 
   /**
@@ -80,6 +85,14 @@ public class LivepeerAPIResourceStream {
 
   public void setPresets(List<String> presets) {
     this.presets = presets;
+  }
+
+  public List<String> getErrors() {
+    return errors;
+  }
+
+  public void setErrors(List<String> errors) {
+    this.errors = errors;
   }
 
   public Map<String, String> getRenditions() {

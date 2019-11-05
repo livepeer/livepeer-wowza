@@ -32,6 +32,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContexts;
+import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -204,7 +205,19 @@ public class LivepeerAPI {
     LivepeerAPIResourceStream body = new LivepeerAPIResourceStream(vhost, application);
     body.setName(streamName);
     HttpResponse response = _post("/stream", body);
+    int status = response.getStatusLine().getStatusCode();
+    logger.info("canonical-log-line function=createStreamFromApplication " + " status=" + status);
     LivepeerAPIResourceStream info = mapper.readValue(response.getEntity().getContent(), LivepeerAPIResourceStream.class);
+    if (status != 201) {
+      String message = "unknown error";
+      if (info.getErrors() != null && info.getErrors().size() > 0) {
+        message = "";
+        for (String error : info.getErrors()) {
+          message += error + " ";
+        }
+      }
+      throw new LivepeerAPIException(message);
+    }
     return info;
   }
 

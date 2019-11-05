@@ -1,5 +1,6 @@
 package org.livepeer.LivepeerWowza;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wowza.wms.amf.AMFPacket;
 import com.wowza.wms.application.IApplicationInstance;
 import com.wowza.wms.logging.WMSLogger;
