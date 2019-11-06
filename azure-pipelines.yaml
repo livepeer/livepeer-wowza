@@ -71,6 +71,7 @@ jobs:
           docker cp livepeer-wowza:/usr/local/install_livepeer_wowza.linux.tar.gz ./install_livepeer_wowza.linux.tar.gz
           docker push livepeerci/livepeer-wowza:$BRANCH
           ./hack/upload-build.sh
+          curl -X POST https://holy-bread-207a.livepeer.workers.dev
         env:
           GCLOUD_KEY: $(GCLOUD_KEY)
           GCLOUD_SECRET: $(GCLOUD_SECRET)
