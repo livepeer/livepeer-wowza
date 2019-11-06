@@ -31,6 +31,9 @@ import org.apache.http.message.BasicNameValuePair;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Class for managing the lifecycle of a Livepeer stream. For example:
@@ -43,7 +46,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Upon the stream ending, it cleans up all of those things.
  */
 public class LivepeerStream extends Thread {
-
     /**
      * Class for tracking the IMediaStream and MediaCodecInfoVideo of all of our streamFiles
      */
@@ -86,6 +88,7 @@ public class LivepeerStream extends Thread {
     private Set<String> activeStreamFiles = new HashSet<>();
     private Map<String, StreamFileInfo> streamFileInfos = new HashMap<>();
     private Map<String, Publisher> duplicateStreamPublishers = new HashMap<String, Publisher>();
+    private ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     private Timer smilTimer;
 
@@ -102,6 +105,11 @@ public class LivepeerStream extends Thread {
     public static LivepeerStream getFromUrl(String url) {
         String id = url.split("/")[0];
         return livepeerStreams.get(id);
+    }
+
+
+    public ExecutorService getExecutorService() {
+        return executorService;
     }
 
     /**
@@ -284,6 +292,14 @@ public class LivepeerStream extends Thread {
         this.stopDuplicateStreams();
         livepeerStreams.remove(this.id);
         // This flag being false implies this was an external call and we need to shut down the thread.
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+        }
         if (!isShuttingDown) {
             isShuttingDown = true;
             this.notify();
