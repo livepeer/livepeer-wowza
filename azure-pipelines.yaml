@@ -63,12 +63,15 @@ jobs:
       - checkout: self
       - bash: |-
           set -e
-          docker build -t livepeer-wowza --target server --build-arg=version=$(git describe --always --tags --dirty) .
-          docker create --name livepeer-wowza livepeer-wowza /bin/bash
+          export BRANCH=$(Build.SourceBranchName)
+          docker login -u '$(DOCKER_USER)' -p '$(DOCKER_PASS)'
+          docker build -t livepeerci/livepeer-wowza:$BRANCH --target server --build-arg=version=$(git describe --always --tags --dirty) .
+          docker create --name livepeer-wowza livepeerci/livepeer-wowza:$BRANCH /bin/bash
           docker cp livepeer-wowza:/usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar ./LivepeerWowza.jar
           docker cp livepeer-wowza:/usr/local/install_livepeer_wowza.linux.tar.gz ./install_livepeer_wowza.linux.tar.gz
-          export BRANCH=$(Build.SourceBranchName)
+          docker push livepeerci/livepeer-wowza:$BRANCH
           ./hack/upload-build.sh
+          curl -X POST https://holy-bread-207a.livepeer.workers.dev
         env:
           GCLOUD_KEY: $(GCLOUD_KEY)
           GCLOUD_SECRET: $(GCLOUD_SECRET)

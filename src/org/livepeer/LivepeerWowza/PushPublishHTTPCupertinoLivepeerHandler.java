@@ -9,6 +9,7 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.UUID;
+import java.util.concurrent.Future;
 
 import com.wowza.util.IPacketFragment;
 import com.wowza.util.PacketFragmentList;
@@ -19,11 +20,13 @@ import com.wowza.wms.manifest.model.m3u8.MediaSegmentModel;
 import com.wowza.wms.manifest.model.m3u8.PlaylistModel;
 import com.wowza.wms.pushpublish.protocol.cupertino.PushPublishHTTPCupertino;
 import com.wowza.wms.server.LicensingException;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.AbstractHttpEntity;
+import org.apache.http.util.EntityUtils;
 
 public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupertino {
 
@@ -72,39 +75,47 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
    */
   @Override
   public int sendMediaSegment(MediaSegmentModel mediaSegment) {
-    String url = null;
-    int size = 0;
-    LivepeerAPIResourceBroadcaster livepeerBroadcaster = null;
-    try {
-      PacketFragmentList list = mediaSegment.getFragmentList();
-      LiveStreamPacketizerCupertinoChunk chunkInfo = (LiveStreamPacketizerCupertinoChunk) mediaSegment.getChunkInfoCupertino();
-      if (list != null && list.size() != 0) {
-        url = livepeerStream.rewriteIdToUrl(httpAddress + "/" + getSegmentUri(mediaSegment));
-        livepeerBroadcaster = livepeerStream.getBroadcaster();
-        LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
-        RequestConfig requestConfig = RequestConfig.custom()
-                // We're not expecting anything until we send the full segment, so:
-                .setSocketTimeout(Math.toIntExact(chunkInfo.getDuration()) * 3)
-                .setConnectTimeout(connectionTimeout)
-                .setConnectionRequestTimeout(connectionTimeout)
-                .build();
-        HttpPut req = new HttpPut(url);
-        req.setConfig(requestConfig);
-        req.setEntity(entity);
-        req.setHeader("Content-Duration", "" + chunkInfo.getDuration());
-        HttpResponse res = httpClient.execute(req);
-        int status = res.getStatusLine().getStatusCode();
-        size = entity.getSize();
-        if (status < 200 || status >= 300)
-          size = 0;
-      } else
-        size = 1;  // empty fragment list.
-    } catch (Exception e) {
-      logError("sendMediaSegment", "Failed to send media segment data to " + url.toString(), e);
-      livepeerStream.notifyBroadcasterProblem(livepeerBroadcaster);
-      size = 0;
+    logger.info("canonical-log-line function=sendMediaSegment phase=uberstart");
+    PacketFragmentList list = mediaSegment.getFragmentList();
+    LiveStreamPacketizerCupertinoChunk chunkInfo = (LiveStreamPacketizerCupertinoChunk) mediaSegment.getChunkInfoCupertino();
+    if (list != null && list.size() != 0) {
+      String url = livepeerStream.rewriteIdToUrl(httpAddress + "/" + getSegmentUri(mediaSegment));
+
+      LivepeerAPIResourceBroadcaster livepeerBroadcaster = livepeerStream.getBroadcaster();
+      LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
+      livepeerStream.getExecutorService().execute(() -> {
+        try {
+          logger.info("canonical-log-line function=sendMediaSegment phase=start url=" + url);
+          RequestConfig requestConfig = RequestConfig.custom()
+                  // We're not expecting anything until we send the full segment, so:
+                  .setSocketTimeout(Math.toIntExact(chunkInfo.getDuration()) * 3)
+                  .setConnectTimeout(connectionTimeout)
+                  .setConnectionRequestTimeout(connectionTimeout)
+                  .build();
+          HttpPut req = new HttpPut(url);
+          req.setConfig(requestConfig);
+          req.setEntity(entity);
+          int width = chunkInfo.getCodecInfoVideo().getVideoWidth();
+          int height = chunkInfo.getCodecInfoVideo().getVideoHeight();
+          String resolution = width + "x" + height;
+          req.setHeader("Content-Duration", "" + chunkInfo.getDuration());
+          req.setHeader("Content-Resolution", resolution);
+          long start = System.currentTimeMillis();
+          // some operations
+          HttpResponse res = httpClient.execute(req);
+          double elapsed = (System.currentTimeMillis() - start) / (double) 1000;
+          // Consume the response entity to free the thread
+          HttpEntity responseEntity = res.getEntity();
+          EntityUtils.consume(responseEntity);
+          int status = res.getStatusLine().getStatusCode();
+          logger.info("canonical-log-line function=sendMediaSegment phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (chunkInfo.getDuration() / (double) 1000) + " resolution=" + resolution + " size=" + entity.getSize());
+        } catch (Exception e) {
+          logError("sendMediaSegment", "Failed to send media segment data to " + url.toString(), e);
+          livepeerStream.notifyBroadcasterProblem(livepeerBroadcaster);
+        }
+      });
     }
-    return size;
+    return 1;
   }
 
   @Override

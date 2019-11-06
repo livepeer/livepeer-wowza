@@ -1,5 +1,6 @@
 package org.livepeer.LivepeerWowza;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wowza.wms.amf.AMFPacket;
 import com.wowza.wms.application.IApplicationInstance;
 import com.wowza.wms.logging.WMSLogger;
@@ -30,6 +31,9 @@ import org.apache.http.message.BasicNameValuePair;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Class for managing the lifecycle of a Livepeer stream. For example:
@@ -42,7 +46,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Upon the stream ending, it cleans up all of those things.
  */
 public class LivepeerStream extends Thread {
-
     /**
      * Class for tracking the IMediaStream and MediaCodecInfoVideo of all of our streamFiles
      */
@@ -85,6 +88,7 @@ public class LivepeerStream extends Thread {
     private Set<String> activeStreamFiles = new HashSet<>();
     private Map<String, StreamFileInfo> streamFileInfos = new HashMap<>();
     private Map<String, Publisher> duplicateStreamPublishers = new HashMap<String, Publisher>();
+    private ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     private Timer smilTimer;
 
@@ -103,19 +107,9 @@ public class LivepeerStream extends Thread {
         return livepeerStreams.get(id);
     }
 
-    /**
-     * Given a `livepeer-${uuid}` string, return an actual HTTP url of a broadcaster. If it's passed
-     * a non-Livepeer URL, it returns the string unchanged;
-     *
-     * @param url
-     * @return
-     */
-    public static String rewriteUrl(String url) {
-        LivepeerStream livepeerStream = LivepeerStream.getFromUrl(url);
-        if (livepeerStream == null) {
-            return url;
-        }
-        return livepeerStream.rewriteIdToUrl(url);
+
+    public ExecutorService getExecutorService() {
+        return executorService;
     }
 
     /**
@@ -298,6 +292,14 @@ public class LivepeerStream extends Thread {
         this.stopDuplicateStreams();
         livepeerStreams.remove(this.id);
         // This flag being false implies this was an external call and we need to shut down the thread.
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+        }
         if (!isShuttingDown) {
             isShuttingDown = true;
             this.notify();
@@ -379,7 +381,6 @@ public class LivepeerStream extends Thread {
         // Do we need to update the SMILFile?
         boolean needsUpdate = false;
         // Do we need to set a timer to wait until we have bitrate data?
-        boolean needsTimer = false;
         for (StreamFileInfo info : streamFileInfos.values()) {
             IMediaStream stream = info.getStream();
             MediaCodecInfoVideo codecInfoVideo = info.getCodecInfoVideo();
@@ -389,7 +390,7 @@ public class LivepeerStream extends Thread {
             }
             if (stream.getPublishBitrateVideo() == -1 || stream.getPublishBitrateAudio() == -1) {
                 // We don't yet have a bitrate for this stream, wait till we do
-                needsTimer = true;
+                this.triggerSmilTimer();
                 continue;
             }
             needsUpdate = true;
@@ -407,11 +408,6 @@ public class LivepeerStream extends Thread {
             streamConfig.setSmilfileName(smilFileName);
             smilFile.getStreams().add(streamConfig);
         }
-        // Only set a timer if one isn't already set, you dingus
-        if (needsTimer && this.smilTimer == null) {
-            smilTimer = new Timer();
-            smilTimer.schedule(new UpdateSmilTask(), SMIL_CHECK_INTERVAL);
-        }
         if (needsUpdate) {
             try {
                 smilFile.saveObject();
@@ -421,6 +417,17 @@ public class LivepeerStream extends Thread {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * Idempotent function to kick off the timer that waits until we have bitrate information
+     */
+    protected void triggerSmilTimer() {
+        if (smilTimer != null) {
+            return;
+        }
+        smilTimer = new Timer();
+        smilTimer.schedule(new UpdateSmilTask(), SMIL_CHECK_INTERVAL);
     }
 
     /**
@@ -466,6 +473,7 @@ public class LivepeerStream extends Thread {
                 MediaCodecInfoVideo codecInfoVideo = info.getCodecInfoVideo();
                 if (stream.getPublishBitrateVideo() == -1 || stream.getPublishBitrateAudio() == -1) {
                     // We don't yet have a bitrate for this stream, wait till we do
+                    this.triggerSmilTimer();
                     continue;
                 }
                 // Check to see if our stream name group is supposed to contain this rendition
@@ -510,7 +518,7 @@ public class LivepeerStream extends Thread {
         streamFiles.loadObject();
         Map<String, String> streamFilesMustExist = new HashMap<>();
         for (String renditionName : livepeerStream.getRenditions().keySet()) {
-            streamFilesMustExist.put(renditionName, this.id + livepeerStream.getRenditions().get(renditionName));
+            streamFilesMustExist.put(renditionName, livepeer.getLivepeerHost() + livepeerStream.getRenditions().get(renditionName));
         }
         logger.info("LIVEPEER ensuring these renditions exist: " + streamFilesMustExist);
         this.activeStreamFiles = streamFilesMustExist.keySet();
@@ -553,7 +561,7 @@ public class LivepeerStream extends Thread {
             streamFileAdv.loadObject();
             AdvancedSetting s = streamFileAdv.getAdvSetting("CupertinoHLS", "cupertinoManifestMaxBufferBlockCount");
             s.setEnabled(true);
-            s.setValue("35");
+            s.setValue("50");
             s = streamFileAdv.getAdvSetting("CupertinoHLS", "cupertinoManifestBufferBlockCount");
             s.setEnabled(true);
             s.setValue("4");

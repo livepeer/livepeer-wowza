@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.7](https://github.com/livepeer/livepeer-wowza/compare/0.1.6...0.1.7) (2019-10-30)
+
+
+### Bug Fixes
+
+* **wowza:** stream groups recover from stream reconnect ([aab863d](https://github.com/livepeer/livepeer-wowza/commit/aab863d))
+* **wowza:** tweak maximum HLS playlist sizes ([786e2e4](https://github.com/livepeer/livepeer-wowza/commit/786e2e4))
+
+### [0.1.6](https://github.com/livepeer/livepeer-wowza/compare/0.1.5...0.1.6) (2019-10-23)
+
+
+### Bug Fixes
+
+* **wowza:** add content-resolution http header ([20d6f90](https://github.com/livepeer/livepeer-wowza/commit/20d6f90))
+* **wowza:** use api-generated stream urls, reduces stuttering ([0e38564](https://github.com/livepeer/livepeer-wowza/commit/0e38564))
+
+### [0.1.5](https://github.com/livepeer/livepeer-wowza/compare/0.1.4...0.1.5) (2019-10-21)
+
+
+### Bug Fixes
+
+* **wowza:** don't stop the transcode stream on the "stop" action ([2dcff21](https://github.com/livepeer/livepeer-wowza/commit/2dcff21)), closes [#39](https://github.com/livepeer/livepeer-wowza/issues/39)
+
 ### [0.1.4](https://github.com/livepeer/livepeer-wowza/compare/0.1.3...0.1.4) (2019-09-05)
 
 

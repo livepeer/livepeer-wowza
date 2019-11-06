@@ -17,6 +17,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.config.SocketConfig;
@@ -31,9 +32,14 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContexts;
+import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +56,7 @@ public class LivepeerAPI {
   private IApplicationInstance appInstance;
   private static ConcurrentHashMap<IApplicationInstance, LivepeerAPI> apiInstances = new ConcurrentHashMap<>();
   private String livepeerApiUrl;
+  private String livepeerHost;
   private String livepeerApiKey;
   private CloseableHttpClient httpClient;
   private ObjectMapper mapper;
@@ -90,6 +97,21 @@ public class LivepeerAPI {
     }
     if (applicationProps.getPropertyStr(LIVEPEER_PROP_API_KEY) != null)  {
       livepeerApiKey = applicationProps.getPropertyStr(LIVEPEER_PROP_API_KEY);
+    }
+
+    // API locations are specified at https://livepeer.live/api, but we need https://livepeer.live/api/stream
+    // for some applications.
+
+    try {
+      URI apiUrl = new URI(livepeerApiUrl);
+      URIBuilder streamUriBuilder = new URIBuilder(apiUrl);
+      streamUriBuilder.setPath("/");
+      this.livepeerHost = streamUriBuilder.toString();
+      // Remove trailing slash
+      this.livepeerHost = this.livepeerHost.substring(0, this.livepeerHost.length() - 1);
+    } catch (URISyntaxException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
     }
 
     logger.info("Livepeer API server URL: " + livepeerApiUrl);
@@ -144,6 +166,10 @@ public class LivepeerAPI {
     return appInstance;
   }
 
+  public String getLivepeerHost() {
+    return livepeerHost;
+  }
+
   protected void log(String text) {
     if (this.logger != null) {
       this.logger.info("LivepeerAPI: " + text);
@@ -179,7 +205,19 @@ public class LivepeerAPI {
     LivepeerAPIResourceStream body = new LivepeerAPIResourceStream(vhost, application);
     body.setName(streamName);
     HttpResponse response = _post("/stream", body);
+    int status = response.getStatusLine().getStatusCode();
+    logger.info("canonical-log-line function=createStreamFromApplication " + " status=" + status);
     LivepeerAPIResourceStream info = mapper.readValue(response.getEntity().getContent(), LivepeerAPIResourceStream.class);
+    if (status != 201) {
+      String message = "unknown error";
+      if (info.getErrors() != null && info.getErrors().size() > 0) {
+        message = "";
+        for (String error : info.getErrors()) {
+          message += error + " ";
+        }
+      }
+      throw new LivepeerAPIException(message);
+    }
     return info;
   }
 

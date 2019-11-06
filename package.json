@@ -1,6 +1,6 @@
 {
   "name": "livepeer-wowza",
-  "version": "0.1.4",
+  "version": "0.1.7",
   "description": "Livepeer Wowza plugin",
   "repository": "git@github.com:livepeer/livepeer-wowza.git",
   "author": "Livepeer",
@@ -10,6 +10,7 @@
     "standard-version": "^7.0.0"
   },
   "scripts": {
-    "e2e-test": "docker build --target tester -t wowza-tester .; docker run wowza-tester | tee e2e-test.log"
+    "e2e-test": "docker build --target tester -t wowza-tester .; docker run wowza-tester | tee e2e-test.log",
+    "release": "standard-version -t ''"
   }
 }
