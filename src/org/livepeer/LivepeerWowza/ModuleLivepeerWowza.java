@@ -33,7 +33,6 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 			LivepeerStream livepeerStream = new LivepeerStream(stream, streamName, livepeer);
 			livepeerStreams.put(streamName, livepeerStream);
-			livepeerStream.start();
 		}
 
 		public void onUnPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
@@ -46,6 +45,12 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 		public void onCodecInfoVideo(IMediaStream stream, MediaCodecInfoVideo codecInfoVideo) {
 			getLogger().info("CodecInfoVideo for " + stream.getName());
+			if (livepeerStreams.containsKey(stream.getName())) {
+				LivepeerStream livepeerStream = livepeerStreams.get(stream.getName());
+				livepeerStream.setCodecInfoVideo(codecInfoVideo);
+				livepeerStream.start();
+				return;
+			}
 			LivepeerStream manager = findStreamManager(stream.getName());
 			if (manager == null) {
 				// Not a transcoded rendition, ignore.
@@ -101,7 +106,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 	 */
 	public LivepeerStream findStreamManager(String streamName) {
 		// Avoid an infinite loop - if this new stream is a transcoded rendition or one of our streamfiles,
-        // don't transcode again
+		// don't transcode again
 		if (streamName.endsWith(".stream")) {
             streamName = streamName.substring(0, streamName.length() - 7);
 		}

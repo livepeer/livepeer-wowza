@@ -83,6 +83,7 @@ public class LivepeerStream extends Thread {
     private String applicationName;
     private String appInstanceName;
     private String smilFileName;
+    private MediaCodecInfoVideo codecInfoVideo;
     private LivepeerAPIResourceStream livepeerStream;
     private PushPublishHTTPCupertinoLivepeerHandler hlsPush;
     private Set<String> activeStreamFiles = new HashSet<>();
@@ -151,7 +152,7 @@ public class LivepeerStream extends Thread {
      * This stream has started. Try and fire it up!
      */
     public synchronized void startStream() throws IOException, LicensingException, ConfigBase.ConfigBaseException {
-        logger.info(streamName + " start() started");
+        logger.info(streamName + "canonical-log-line function=startStream phase=start");
 
         IApplicationInstance appInstance = livepeer.getAppInstance();
         appInstanceName = appInstance.getName();
@@ -183,7 +184,7 @@ public class LivepeerStream extends Thread {
         this.startSmilFile();
         this.startDuplicateStreams();
 
-        logger.info(streamName + " start() succeeded");
+        logger.info(streamName + "canonical-log-line function=startStream phase=end");
 
         // "Main Loop". Do nothing until there is a problem, then select a new broadcaster.
         while (true) {
@@ -216,7 +217,7 @@ public class LivepeerStream extends Thread {
     private LivepeerAPIResourceStream createStreamRetry() {
         while (true) {
             try {
-                LivepeerAPIResourceStream livepeerStream = livepeer.createStreamFromApplication(vHostName, applicationName, streamName);
+                LivepeerAPIResourceStream livepeerStream = livepeer.createStreamFromApplication(vHostName, applicationName, streamName, codecInfoVideo);
                 logger.info("LIVEPEER: created stream " + livepeerStream.getId());
                 return livepeerStream;
             } catch (Exception e) {
@@ -704,4 +705,11 @@ public class LivepeerStream extends Thread {
         return url.replaceFirst(this.id, broadcaster.getAddress());
     }
 
+    public MediaCodecInfoVideo getCodecInfoVideo() {
+        return codecInfoVideo;
+    }
+
+    public void setCodecInfoVideo(MediaCodecInfoVideo codecInfoVideo) {
+        this.codecInfoVideo = codecInfoVideo;
+    }
 }

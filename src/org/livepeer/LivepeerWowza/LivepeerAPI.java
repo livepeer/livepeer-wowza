@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wowza.wms.application.IApplicationInstance;
 import com.wowza.wms.application.WMSProperties;
 import com.wowza.wms.logging.WMSLogger;
+import com.wowza.wms.media.model.MediaCodecInfoVideo;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderTemplateAppConfig;
 import com.wowza.wms.server.Server;
@@ -183,8 +184,8 @@ public class LivepeerAPI {
    * @return wowza resource
    * @throws IOException something went wrong talking to the Livepeer API
    */
-  public LivepeerAPIResourceStream createStreamFromApplication(String vhost, String application, String streamName) throws IOException {
-    LivepeerAPIResourceStream body = new LivepeerAPIResourceStream(vhost, application);
+  public LivepeerAPIResourceStream createStreamFromApplication(String vhost, String application, String streamName, MediaCodecInfoVideo mediaCodecInfoVideo) throws IOException {
+    LivepeerAPIResourceStream body = new LivepeerAPIResourceStream(vhost, application, mediaCodecInfoVideo);
     body.setName(streamName);
     HttpResponse response = _post("/stream", body);
     int status = response.getStatusLine().getStatusCode();
