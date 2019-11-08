@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/livepeer/livepeer-wowza/compare/0.1.7...0.2.0) (2019-11-08)
+
+
+### Bug Fixes
+
+* **wowza:** more logging on sendMediaSegment ([5edc5e6](https://github.com/livepeer/livepeer-wowza/commit/5edc5e6))
+* **wowza:** POST more spec-compliant streams, handle errors ([e2438f4](https://github.com/livepeer/livepeer-wowza/commit/e2438f4))
+* **wowza:** use httpOriginMode on the test server ([4ed7858](https://github.com/livepeer/livepeer-wowza/commit/4ed7858))
+
+
+### Features
+
+* **wowza:** add ability to match source fps ([b11ab3d](https://github.com/livepeer/livepeer-wowza/commit/b11ab3d))
+* **wowza:** disable duplicate streams by default, introduce setting ([68927b4](https://github.com/livepeer/livepeer-wowza/commit/68927b4))
+
 ### [0.1.7](https://github.com/livepeer/livepeer-wowza/compare/0.1.6...0.1.7) (2019-10-30)
 
 
