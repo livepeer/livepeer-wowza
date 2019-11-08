@@ -109,6 +109,11 @@
 				<Value>http://server-property.example.com</Value>
 				<Type>String</Type>
 			</Property>
+			<Property>
+				<Name>livepeer.org/duplicate-streams</Name>
+				<Value>true</Value>
+				<Type>Boolean</Type>
+			</Property>
     </Properties>
   </Server>
 </Root>

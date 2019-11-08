@@ -89,6 +89,7 @@ public class LivepeerStream extends Thread {
     private Map<String, StreamFileInfo> streamFileInfos = new HashMap<>();
     private Map<String, Publisher> duplicateStreamPublishers = new HashMap<String, Publisher>();
     private ExecutorService executorService = Executors.newFixedThreadPool(10);
+    private boolean shouldDuplicateStreams;
 
     private Timer smilTimer;
 
@@ -124,6 +125,7 @@ public class LivepeerStream extends Thread {
         this.streamName = streamName;
         this.livepeer = livepeer;
         this.logger = livepeer.getLogger();
+        this.shouldDuplicateStreams = this.livepeer.getProps().getDuplicateStreams();
     }
 
     @Override
@@ -336,6 +338,9 @@ public class LivepeerStream extends Thread {
     }
 
     public void onPacket(IMediaStream stream, AMFPacket packet) {
+        if (!shouldDuplicateStreams) {
+            return;
+        }
         String streamName = stream.getName();
         if (!streamName.endsWith(".stream")) {
             logger.error("LIVEPEER onPacket called for non-streamfile " + streamName);
@@ -649,6 +654,9 @@ public class LivepeerStream extends Thread {
      * the names that they expect
      */
     protected void startDuplicateStreams() {
+        if (!shouldDuplicateStreams) {
+            return;
+        }
         IApplicationInstance appInstance = livepeer.getAppInstance();
         for (String renditionName : livepeerStream.getRenditions().keySet()) {
             Publisher publisher = Publisher.createInstance(appInstance.getVHost(), applicationName, appInstanceName);
@@ -660,6 +668,9 @@ public class LivepeerStream extends Thread {
     }
 
     protected void stopDuplicateStreams() {
+        if (!shouldDuplicateStreams) {
+            return;
+        }
         for (String renditionName : livepeerStream.getRenditions().keySet()) {
             Publisher publisher = duplicateStreamPublishers.get(renditionName);
             if (publisher == null) {
