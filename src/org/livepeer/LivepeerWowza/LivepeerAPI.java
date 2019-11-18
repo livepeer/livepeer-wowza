@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wowza.wms.application.IApplicationInstance;
 import com.wowza.wms.application.WMSProperties;
 import com.wowza.wms.logging.WMSLogger;
+import com.wowza.wms.media.model.MediaCodecInfoVideo;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderTemplateAppConfig;
 import com.wowza.wms.server.Server;
@@ -48,10 +49,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class LivepeerAPI {
 
-  public static final String LIVEPEER_PROP_API_SERVER_URL = "livepeer.org/api-server-url";
-  public static final String LIVEPEER_PROP_API_KEY = "livepeer.org/api-key";
-  private static final String DEFAULT_LIVEPEER_API_URL = "https://livepeer.live/api";
-  private static final String DEFAULT_LIVEPEER_API_KEY = "no_api_key";
   private static LivepeerAPI _instance;
   private IApplicationInstance appInstance;
   private static ConcurrentHashMap<IApplicationInstance, LivepeerAPI> apiInstances = new ConcurrentHashMap<>();
@@ -62,6 +59,8 @@ public class LivepeerAPI {
   private ObjectMapper mapper;
   private WMSLogger logger;
 
+  private LivepeerAPIProperties props;
+
   public static LivepeerAPI getApiInstance(IApplicationInstance appInstance) {
     return apiInstances.get(appInstance);
   }
@@ -69,35 +68,15 @@ public class LivepeerAPI {
   public LivepeerAPI(IApplicationInstance appInstance, WMSLogger logger) {
     this.logger = logger;
     this.appInstance = appInstance;
+    this.props = new LivepeerAPIProperties(appInstance);
     apiInstances.put(appInstance, this);
+
+    livepeerApiUrl = props.getApiServerUrl();
+    livepeerApiKey = props.getApiKey();
 
     // Get our configuration options. They may be specified in the server, vhost, or application, and they override
     // in that order.
-    WMSProperties serverProps = Server.getInstance().getProperties();
-    WMSProperties vHostProps = appInstance.getVHost().getProperties();
-    WMSProperties applicationProps = appInstance.getProperties();
 
-    livepeerApiUrl = DEFAULT_LIVEPEER_API_URL;
-    if (serverProps.getPropertyStr(LIVEPEER_PROP_API_SERVER_URL) != null)  {
-      livepeerApiUrl = serverProps.getPropertyStr(LIVEPEER_PROP_API_SERVER_URL);
-    }
-    if (vHostProps.getPropertyStr(LIVEPEER_PROP_API_SERVER_URL) != null)  {
-      livepeerApiUrl = vHostProps.getPropertyStr(LIVEPEER_PROP_API_SERVER_URL);
-    }
-    if (applicationProps.getPropertyStr(LIVEPEER_PROP_API_SERVER_URL) != null)  {
-      livepeerApiUrl = applicationProps.getPropertyStr(LIVEPEER_PROP_API_SERVER_URL);
-    }
-
-    livepeerApiKey = DEFAULT_LIVEPEER_API_KEY;
-    if (serverProps.getPropertyStr(LIVEPEER_PROP_API_KEY) != null)  {
-      livepeerApiKey = serverProps.getPropertyStr(LIVEPEER_PROP_API_KEY);
-    }
-    if (vHostProps.getPropertyStr(LIVEPEER_PROP_API_KEY) != null)  {
-      livepeerApiKey = vHostProps.getPropertyStr(LIVEPEER_PROP_API_KEY);
-    }
-    if (applicationProps.getPropertyStr(LIVEPEER_PROP_API_KEY) != null)  {
-      livepeerApiKey = applicationProps.getPropertyStr(LIVEPEER_PROP_API_KEY);
-    }
 
     // API locations are specified at https://livepeer.live/api, but we need https://livepeer.live/api/stream
     // for some applications.
@@ -153,7 +132,7 @@ public class LivepeerAPI {
     mapper = new ObjectMapper();
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
-
+  
   public WMSLogger getLogger() {
     return this.logger;
   }
@@ -168,6 +147,10 @@ public class LivepeerAPI {
 
   public String getLivepeerHost() {
     return livepeerHost;
+  }
+
+  public LivepeerAPIProperties getProps() {
+    return props;
   }
 
   protected void log(String text) {
@@ -201,8 +184,8 @@ public class LivepeerAPI {
    * @return wowza resource
    * @throws IOException something went wrong talking to the Livepeer API
    */
-  public LivepeerAPIResourceStream createStreamFromApplication(String vhost, String application, String streamName) throws IOException {
-    LivepeerAPIResourceStream body = new LivepeerAPIResourceStream(vhost, application);
+  public LivepeerAPIResourceStream createStreamFromApplication(String vhost, String application, String streamName, MediaCodecInfoVideo mediaCodecInfoVideo) throws IOException {
+    LivepeerAPIResourceStream body = new LivepeerAPIResourceStream(vhost, application, mediaCodecInfoVideo);
     body.setName(streamName);
     HttpResponse response = _post("/stream", body);
     int status = response.getStatusLine().getStatusCode();
