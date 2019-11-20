@@ -211,6 +211,13 @@ public class LivepeerAPI {
    * @throws IOException something went wrong talking to the Livepeer API
    */
   public List<LivepeerAPIResourceBroadcaster> getBroadcasters() throws IOException {
+    String hardcodedBroadcaster = props.getBroadcasterUrl();
+    if (hardcodedBroadcaster != null) {
+      logger.info("Using hardcoded broadcaster " + hardcodedBroadcaster);
+      LivepeerAPIResourceBroadcaster broadcaster = new LivepeerAPIResourceBroadcaster();
+      broadcaster.setAddress(hardcodedBroadcaster);
+      return Arrays.asList(broadcaster);
+    }
     HttpResponse response = _get("/broadcaster");
     TypeReference typeRef = new TypeReference<List<LivepeerAPIResourceBroadcaster>>() {};
     List<LivepeerAPIResourceBroadcaster> list = mapper.readValue(response.getEntity().getContent(), typeRef);
