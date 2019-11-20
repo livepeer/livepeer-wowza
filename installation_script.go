@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -16,6 +17,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/jbowtie/gokogiri"
 	"github.com/jbowtie/gokogiri/xml"
+	"github.com/manifoldco/promptui"
 )
 
 type version struct {
@@ -25,11 +27,11 @@ type version struct {
 
 func main() {
 	flag.Set("logtostderr", "true")
+	application := flag.String("application", "", "comma separated list of applications on server to update")
 	wowzaDir := flag.String("wowzaDir", "", "path to WowzaStreamingEngine folder")
 	channel := flag.String("channel", "latest", "branch name for latest version of JAR file")
 	apiKey := flag.String("apikey", "", "livepeer api key")
 	flag.Parse()
-
 	// Set wowza default directory appropriate for each operating system
 	if *wowzaDir == "" {
 		if strings.Contains(runtime.GOOS, "windows") {
@@ -66,11 +68,53 @@ func main() {
 		panic(err)
 	}
 
-	// Insert Livepeer Wowza module information into all Application.xml files
-	err = filepath.Walk(*wowzaDir, insertLivepeerWowzaModule)
+	// If user has not set the application flag, find all existing application names
+	appPaths := []string{}
+	if *application == "" {
+		apps, _ := ioutil.ReadDir(filepath.Join(*wowzaDir, "applications/"))
+		for _, app := range apps {
+			appPaths = append(appPaths, app.Name())
+		}
+		*application = strings.Join(appPaths, ",")
+	}
+
+	// Prompt user to confirm applications to update
+	err = promptUserForInsertLocation(*application)
 	if err != nil {
 		panic(err)
 	}
+
+	// Insert Livepeer Wowza module information into selected Application.xml files
+	apps := strings.Split(*application, ",")
+	for _, app := range apps {
+		updatePath := filepath.Join(*wowzaDir, "conf/", app)
+		err = filepath.Walk(updatePath, insertLivepeerWowzaModule)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func promptUserForInsertLocation(apps string) error {
+	prompt := promptui.Select{
+		Label: fmt.Sprintf(`Would you like to install the Wowza Livepeer Module in these locations?: [%s]`, apps),
+		Items: []string{"Yes", "No"},
+	}
+
+	_, result, err := prompt.Run()
+
+	if err != nil {
+		return err
+	}
+
+	if result == "No" {
+		err := errors.New(`
+		No application selected. Please re-run script with the '-application' flag,
+		and provide comma separated list of applications to update with Livepeer module`)
+		return err
+	}
+
+	return nil
 }
 
 func findAndSaveAPIKey(serverFilePath string, apiKey string) (string, error) {
