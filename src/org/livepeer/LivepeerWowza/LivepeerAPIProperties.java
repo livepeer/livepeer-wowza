@@ -20,6 +20,17 @@ public class LivepeerAPIProperties {
     return this.getString(PROP_API_SERVER_URL, DEFAULT_API_SERVER_URL);
   }
 
+  public static final String PROP_BROADCASTER_URL = "livepeer.org/broadcaster-url";
+  private static final String DEFAULT_BROADCASTER_URL = null;
+
+  /**
+   * If set, this overrides the default behavior to retrieve a broadcaster from API_SERVER_URL/api/broadcaster,
+   * and instead just always uses this URL. Useful for testing new cloud environments.
+   */
+  public String getBroadcasterUrl() {
+    return this.getString(PROP_BROADCASTER_URL, DEFAULT_BROADCASTER_URL);
+  }
+
   public static final String PROP_API_KEY = "livepeer.org/api-key";
   private static final String DEFAULT_API_KEY = "no_api_key";
 
