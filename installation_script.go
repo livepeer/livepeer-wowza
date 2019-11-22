@@ -85,9 +85,11 @@ func main() {
 	}
 
 	// Prompt user to confirm applications to update
-	err = promptUserForInsertLocation(*application)
-	if err != nil {
-		panic(err)
+	if terminal {
+		err = promptUserForInsertLocation(*application)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	// Insert Livepeer Wowza module information into selected Application.xml files
@@ -103,7 +105,8 @@ func main() {
 
 func findAndSaveAPIKey(serverFilePath string, apiKey string, terminal bool) (string, error) {
 	// Create searchable xml document
-	glog.Error("PAHHTTT", serverFilePath)
+	var flagAPIKey = apiKey
+	apiKey = ""
 	doc, err := createSearchableXMLDocument(serverFilePath)
 	if err != nil {
 		return "", fmt.Errorf("Error creating searable XML serverFilePath: %v", err)
@@ -135,28 +138,42 @@ func findAndSaveAPIKey(serverFilePath string, apiKey string, terminal bool) (str
 		}
 	}
 
-	if apiKey == "" && terminal {
-		// If apiKey not found, prompt user for API key
-		apiKey = promptUserForAPIKey()
-		// Add API key to XML document
-		propertiesNodes[0].AddChild(fmt.Sprintf(
-			`	<Property>
+	if flagAPIKey == "" {
+		if apiKey == "" && terminal {
+			// If apiKey not found, prompt user for API key
+			apiKey = promptUserForAPIKey()
+			// Add API key to XML document
+			propertiesNodes[0].AddChild(fmt.Sprintf(
+				`	<Property>
+						<Name>livepeer.org/api-key</Name>
+						<Value>%s</Value>
+						<Type>String</Type>
+					</Property>
+				`, apiKey))
+		} else if terminal {
+			key := promptUserChangeAPIKey(apiKey)
+			if key == "" {
+				return apiKey, nil
+			}
+			apiKey = key
+			// Add new API key to XML document
+			valueNodes[0].SetInnerHtml(apiKey)
+		}
+	} else {
+		if apiKey == "" {
+			propertiesNodes[0].AddChild(fmt.Sprintf(
+				`	<Property>
 					<Name>livepeer.org/api-key</Name>
 					<Value>%s</Value>
 					<Type>String</Type>
 				</Property>
-			`, apiKey))
-	} else if terminal {
-		key := promptUserChangeAPIKey(apiKey)
-		if key == "" {
-			return apiKey, nil
+			`, flagAPIKey))
+		} else {
+			valueNodes[0].SetInnerHtml(flagAPIKey)
 		}
-		apiKey = key
-		// Add new API key to XML document
-		valueNodes[0].SetInnerHtml(apiKey)
 	}
 
-	if apiKey == "" {
+	if apiKey == "" && flagAPIKey == "" {
 		panic(errors.New("Failed to write API key, no key saved or provided"))
 	}
 
@@ -164,7 +181,11 @@ func findAndSaveAPIKey(serverFilePath string, apiKey string, terminal bool) (str
 	if err != nil {
 		return "", fmt.Errorf("Failed to write API key to Server.xml file, error: %v", err)
 	}
-	fmt.Printf("Livepeer API key inserted into Server.XML: %s\n", apiKey)
+	if flagAPIKey == "" {
+		fmt.Printf("Livepeer API key inserted into Server.XML: %s\n", apiKey)
+	} else {
+		fmt.Printf("Livepeer API key inserted into Server.XML: %s\n", flagAPIKey)
+	}
 
 	return apiKey, nil
 }
