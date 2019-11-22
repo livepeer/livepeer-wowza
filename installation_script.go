@@ -219,14 +219,14 @@ func promptUserForInsertLocation(apps string) error {
 	promptErr := errors.New(`
 	No application selected. Please re-run script with the '-application' flag,
 	and provide comma separated list of applications to update with Livepeer module.`)
-	_, err := promptSelect(label, promptErr)
+	_, err := promptSelect(label, []string{"Yes", "No"}, promptErr)
 	return err
 }
 
-func promptSelect(label string, promptErr error) (string, error) {
+func promptSelect(label string, items []string, promptErr error) (string, error) {
 	prompt := promptui.Select{
 		Label: label,
-		Items: []string{"Yes", "No"},
+		Items: items,
 	}
 
 	_, res, err := prompt.Run()
@@ -246,7 +246,7 @@ func promptSelect(label string, promptErr error) (string, error) {
 func promptUserChangeAPIKey(key string) string {
 	apiKey := ""
 	label := fmt.Sprintf("The following API key already provided: '%v'. Would you like to enter a new Livepeer API key?", key)
-	res, err := promptSelect(label, errors.New(""))
+	res, err := promptSelect(label, []string{"No", "Yes"}, errors.New(""))
 	if err != nil && res == "" {
 		panic(err)
 	}
@@ -260,7 +260,8 @@ func promptUserForAPIKey() string {
 	label := "Please enter your Livepeer API key"
 	apiKey, err := promptUser(label, errors.New("Invalid key provided: please enter a valid string"))
 	if err != nil {
-		fmt.Printf("Prompt failed: %v\n", err)
+		errMessage := fmt.Sprintf("Prompt failedHI: %v\n", err)
+		panic(errors.New(errMessage))
 	}
 	return strings.TrimSpace(apiKey)
 }
