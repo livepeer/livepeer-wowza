@@ -71,6 +71,9 @@ func main() {
 	// Download latest JAR file to disk
 	err = downloadLatestJarFile(*channel, *wowzaDir)
 	if err != nil {
+		if strings.Contains(err.Error(), "permission denied") {
+			panic(fmt.Errorf("***You must run this installation script using as an admin using `sudo`***"))
+		}
 		panic(err)
 	}
 
@@ -101,6 +104,8 @@ func main() {
 			panic(err)
 		}
 	}
+
+	fmt.Print("\n*** Thanks for installing Livepeer Wowza! Please restart your Wowza server to complete the installation process.")
 }
 
 func findAndSaveAPIKey(serverFilePath string, apiKey string, terminal bool) (string, error) {
@@ -230,7 +235,7 @@ func promptSelect(label string, items []string, promptErr error) (string, error)
 	}
 
 	_, res, err := prompt.Run()
-	fmt.Printf("*** "+label+" Your answer: %s\n", res)
+	fmt.Printf(label+" Your answer: %s\n", res)
 
 	if err != nil {
 		return "", err
