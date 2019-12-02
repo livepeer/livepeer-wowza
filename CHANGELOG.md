@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.1](https://github.com/livepeer/livepeer-wowza/compare/0.2.0...0.2.1) (2019-12-02)
+
+
+### Features
+
+* **wowza:** add livepeer.org/broadcaster-url ([f334fa2](https://github.com/livepeer/livepeer-wowza/commit/f334fa2))
+* **wowza:** use livepeer.org/broadcaster-url for pulling back streams too ([c03dd1e](https://github.com/livepeer/livepeer-wowza/commit/c03dd1e))
+
 ## [0.2.0](https://github.com/livepeer/livepeer-wowza/compare/0.1.7...0.2.0) (2019-11-08)
 
 
