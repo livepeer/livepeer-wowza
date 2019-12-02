@@ -253,7 +253,7 @@
 			</Property>
 			<Property>
 				<Name>livepeer.org/broadcaster-url</Name>
-				<Value>https://chi-broadcaster.livepeer-ac.live</Value>
+				<Value>https://chi.livepeer-ac.live</Value>
 				<Type>String</Type>
 			</Property>
 		</Properties>

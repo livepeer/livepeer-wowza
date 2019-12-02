@@ -111,7 +111,6 @@ public class LivepeerAPI {
             new String[]{"TLSv1.1", "TLSv1.2"},
             null,
             SSLConnectionSocketFactory.getDefaultHostnameVerifier());
-    List<Header> headers = Arrays.asList(new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + livepeerApiKey));
     Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory> create()
             .register("https", sslsf)
             .register("http", new PlainConnectionSocketFactory())
@@ -127,7 +126,6 @@ public class LivepeerAPI {
             .setConnectionManager(poolingConnManager)
             .setSSLSocketFactory(sslsf)
             .setUserAgent("LivepeerWowza/" + LivepeerVersion.VERSION)
-            .setDefaultHeaders(headers)
             .build();
     mapper = new ObjectMapper();
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -146,6 +144,10 @@ public class LivepeerAPI {
   }
 
   public String getLivepeerHost() {
+    String hardcodedBroadcaster = props.getBroadcasterUrl();
+    if (hardcodedBroadcaster != null) {
+      return hardcodedBroadcaster;
+    }
     return livepeerHost;
   }
 
@@ -172,6 +174,7 @@ public class LivepeerAPI {
     String json = mapper.writeValueAsString(body);
     StringEntity requestEntity = new StringEntity(json, ContentType.APPLICATION_JSON);
     HttpPost postMethod = new HttpPost(livepeerApiUrl + path);
+    postMethod.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + livepeerApiKey);
     postMethod.setEntity(requestEntity);
     return httpClient.execute(postMethod);
   }
