@@ -243,7 +243,7 @@
 			</Property>
 			<Property>
 				<Name>livepeer.org/api-server-url</Name>
-				<Value>https://livepeer.live/api</Value>
+				<Value>https://livepeer-staging.live/api</Value>
 				<Type>String</Type>
 			</Property>
 			<Property>
@@ -251,11 +251,11 @@
 				<Value>79FBF6F4-D14A-4049-A3E3-72A3962E1CA4</Value>
 				<Type>String</Type>
 			</Property>
-			<Property>
+			<!-- <Property>
 				<Name>livepeer.org/broadcaster-url</Name>
 				<Value>https://chi.livepeer-ac.live</Value>
 				<Type>String</Type>
-			</Property>
+			</Property> -->
 		</Properties>
 	</Application>
 </Root>
