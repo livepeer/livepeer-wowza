@@ -35,7 +35,10 @@ FROM wowzamedia/wowza-streaming-engine-linux@sha256:904d95965cfdbec477a81374fcd2
 
 RUN apt-get update \
   && apt-get install -y software-properties-common \
+  && add-apt-repository ppa:savoury1/graphics \
+  && add-apt-repository ppa:savoury1/multimedia \
   && add-apt-repository ppa:savoury1/ffmpeg4 \
+  && apt-get update \
   && apt-get install -y ffmpeg
 
 COPY --from=installer /go/src/github.com/livepeer/livepeer-wowza/install_livepeer_wowza.linux.tar.gz /usr/local/install_livepeer_wowza.linux.tar.gz
