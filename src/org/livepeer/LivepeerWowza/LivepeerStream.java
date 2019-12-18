@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wowza.wms.amf.AMFPacket;
 import com.wowza.wms.application.IApplicationInstance;
 import com.wowza.wms.logging.WMSLogger;
+import com.wowza.wms.manifest.model.m3u8.MediaSegmentModel;
 import com.wowza.wms.media.model.MediaCodecInfoVideo;
 import com.wowza.wms.medialist.MediaList;
 import com.wowza.wms.medialist.MediaListRendition;
@@ -25,6 +26,7 @@ import com.wowza.wms.stream.MediaStreamMapGroup;
 import com.wowza.wms.stream.publish.Publisher;
 import com.wowza.wms.vhost.IVHost;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 
@@ -91,7 +93,7 @@ public class LivepeerStream extends Thread {
     private Map<String, Publisher> duplicateStreamPublishers = new HashMap<String, Publisher>();
     private ExecutorService executorService = Executors.newFixedThreadPool(10);
     private boolean shouldDuplicateStreams;
-
+    private SortedSet segments = Collections.synchronizedSortedSet(new TreeSet<LivepeerSegment>());
     private Timer smilTimer;
 
     // These two flags control how we handle interrupts
@@ -167,10 +169,9 @@ public class LivepeerStream extends Thread {
 
         // Pick broadcaster from the list at /api/broadcaster
         broadcaster = this.pickBroadcasterRetry();
-        String ingestPath = this.id + "/live/" + livepeerStream.getId();
 
         // Start HLS pushing
-        hlsPush = new PushPublishHTTPCupertinoLivepeerHandler(ingestPath, appInstance, this);
+        hlsPush = new PushPublishHTTPCupertinoLivepeerHandler(appInstance, this);
         hlsPush.setHttpClient(livepeer.getHttpClient());
         hlsPush.setAppInstance(appInstance);
         hlsPush.setSrcStreamName(streamName);
@@ -711,5 +712,30 @@ public class LivepeerStream extends Thread {
 
     public void setCodecInfoVideo(MediaCodecInfoVideo codecInfoVideo) {
         this.codecInfoVideo = codecInfoVideo;
+    }
+
+    /**
+     * Called by PushPublishHTTPCupertinoLivepeerHandler to handle new segments
+     */
+    public void newSegment(MediaSegmentModel mediaSegment) {
+        LivepeerSegment livepeerSegment = new LivepeerSegment(mediaSegment, this);
+        livepeerSegment.uploadSegment(0);
+        segments.add(livepeerSegment);
+    }
+
+    public WMSLogger getLogger() {
+        return logger;
+    }
+
+    public void setLogger(WMSLogger logger) {
+        this.logger = logger;
+    }
+
+    public String getLivepeerId() {
+        return this.livepeerStream.getId();
+    }
+
+    public HttpClient getHttpClient() {
+        return livepeer.getHttpClient();
     }
 }

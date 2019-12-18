@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.Future;
-
 import com.wowza.util.IPacketFragment;
 import com.wowza.util.PacketFragmentList;
 import com.wowza.wms.application.IApplicationInstance;
@@ -38,15 +37,10 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 
   boolean backup = false;
   String groupName = null;
-  private int connectionTimeout = 5000;
 
-  public PushPublishHTTPCupertinoLivepeerHandler(String broadcaster, IApplicationInstance appInstance, LivepeerStream livepeerStream) throws LicensingException {
+  public PushPublishHTTPCupertinoLivepeerHandler(IApplicationInstance appInstance, LivepeerStream livepeerStream) throws LicensingException {
     super();
     this.livepeerStream = livepeerStream;
-    LivepeerAPI livepeer = LivepeerAPI.getApiInstance(appInstance);
-    logger = livepeer.getLogger();
-    httpAddress = broadcaster;
-    logger.debug("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler constructor");
   }
 
   public void setHttpClient(HttpClient client) {
@@ -55,15 +49,7 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
 
   @Override
   public void load(HashMap<String, String> dataMap) {
-    logger.debug("LIVEPEER PushPublishHTTPCupertinoLivepeerHandler load " + dataMap);
     super.load(dataMap);
-  }
-
-  /**
-   * Livepeer wants "0.ts" instead of "media_0.ts", so
-   */
-  public String getSegmentUri(MediaSegmentModel mediaSegment) {
-    return mediaSegment.getUri().toString().replace("media_", "");
   }
 
   /**
@@ -75,106 +61,18 @@ public class PushPublishHTTPCupertinoLivepeerHandler extends PushPublishHTTPCupe
    */
   @Override
   public int sendMediaSegment(MediaSegmentModel mediaSegment) {
-    logger.info("canonical-log-line function=sendMediaSegment phase=uberstart");
     PacketFragmentList list = mediaSegment.getFragmentList();
     LiveStreamPacketizerCupertinoChunk chunkInfo = (LiveStreamPacketizerCupertinoChunk) mediaSegment.getChunkInfoCupertino();
-    if (list != null && list.size() != 0) {
-      String url = livepeerStream.rewriteIdToUrl(httpAddress + "/" + getSegmentUri(mediaSegment));
-
-      LivepeerAPIResourceBroadcaster livepeerBroadcaster = livepeerStream.getBroadcaster();
-      LivepeerSegmentEntity entity = new LivepeerSegmentEntity(list);
-      livepeerStream.getExecutorService().execute(() -> {
-        try {
-          logger.info("canonical-log-line function=sendMediaSegment phase=start url=" + url);
-          RequestConfig requestConfig = RequestConfig.custom()
-                  // We're not expecting anything until we send the full segment, so:
-                  .setSocketTimeout(Math.toIntExact(chunkInfo.getDuration()) * 3)
-                  .setConnectTimeout(connectionTimeout)
-                  .setConnectionRequestTimeout(connectionTimeout)
-                  .build();
-          HttpPut req = new HttpPut(url);
-          req.setConfig(requestConfig);
-          req.setEntity(entity);
-          int width = chunkInfo.getCodecInfoVideo().getVideoWidth();
-          int height = chunkInfo.getCodecInfoVideo().getVideoHeight();
-          String resolution = width + "x" + height;
-          req.setHeader("Content-Duration", "" + chunkInfo.getDuration());
-          req.setHeader("Content-Resolution", resolution);
-          long start = System.currentTimeMillis();
-          // some operations
-          HttpResponse res = httpClient.execute(req);
-          double elapsed = (System.currentTimeMillis() - start) / (double) 1000;
-          // Consume the response entity to free the thread
-          HttpEntity responseEntity = res.getEntity();
-          EntityUtils.consume(responseEntity);
-          int status = res.getStatusLine().getStatusCode();
-          logger.info("canonical-log-line function=sendMediaSegment phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (chunkInfo.getDuration() / (double) 1000) + " resolution=" + resolution + " size=" + entity.getSize());
-        } catch (Exception e) {
-          logError("sendMediaSegment", "Failed to send media segment data to " + url.toString(), e);
-          livepeerStream.notifyBroadcasterProblem(livepeerBroadcaster);
-        }
-      });
+    if (list == null || list.size() == 0) {
+      return 0;
     }
+    livepeerStream.newSegment(mediaSegment);
     return 1;
   }
 
   @Override
   public String getDestionationLogData() {
     return "{\"" + httpAddress + "/" + "\"}";
-  }
-
-
-  /**
-   * Livepeer segments as an HttpEntity suitable for PUTing with Apache HttpClient
-   */
-  public class LivepeerSegmentEntity extends AbstractHttpEntity {
-
-    int size = 0;
-    PacketFragmentList list;
-
-    LivepeerSegmentEntity(PacketFragmentList _list) {
-      this.list = _list;
-    }
-
-
-    public boolean isRepeatable() {
-      return false;
-    }
-
-    public long getContentLength() {
-      return -1;
-    }
-
-    public boolean isStreaming() {
-      return false;
-    }
-
-    public int getSize() {
-      return size;
-    }
-
-    public InputStream getContent() throws IOException {
-      // Should be implemented as well but is irrelevant for this case
-      throw new UnsupportedOperationException();
-    }
-
-    public void writeTo(final OutputStream outstream) throws IOException {
-      DataOutputStream writer = new DataOutputStream(outstream);
-
-      Iterator<IPacketFragment> itr = list.getFragments().iterator();
-      while (itr.hasNext()) {
-        IPacketFragment fragment = itr.next();
-        if (fragment.getLen() <= 0)
-          continue;
-        byte[] data = fragment.getBuffer();
-        size += data.length;
-        writer.write(data);
-      }
-
-      writer.flush();
-    }
-
-
   }
 
   // Welcome to... the no-op zone

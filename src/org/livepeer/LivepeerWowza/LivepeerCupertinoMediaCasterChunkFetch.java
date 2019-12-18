@@ -23,7 +23,6 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
   @Override
   public void init(IApplicationInstance applicationInstance, CupertinoMediaCasterContext cupertinoMediaCasterContext) {
     livepeer = LivepeerAPI.getApiInstance(applicationInstance);
-    livepeer.log("LivepeerCupertinoMediaCasterChunkFetch init()");
     httpClient = livepeer.getHttpClient();
   }
 
@@ -36,7 +35,6 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
    */
   @Override
   public CupertinoMediaCasterFetchedResult fetchManifest(String path, int timeout, int retries) {
-    livepeer.log("LivepeerCupertinoMediaCasterChunkFetch fetchManifest(" + path + ", " + timeout + ", " + retries + ")");
     for (int i = 0; i < retries; i += 1) {
       try {
         HttpGet req = new HttpGet(path);

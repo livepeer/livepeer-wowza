@@ -7,7 +7,7 @@
 
 	<target name="jar">
 		<mkdir dir="bin/classes"/>
-		<javac srcdir="src" destdir="bin/classes" />
+		<javac srcdir="src" destdir="bin/classes" debug="true" />
 		<jar basedir="bin/classes" jarfile="${wowza.lib.dir}/${jar.filename}">
 			<manifest>
 				<attribute name="Main-Class" value="org.livepeer.LivepeerWowza.ModuleLivepeerWowza"/>

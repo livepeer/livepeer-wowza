@@ -126,6 +126,10 @@ public class LivepeerAPIResourceStream {
     this.wowza = wowza;
   }
 
+  @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+  public static class LivepeerAPIResourceStreamProfile {
+  }
+
 
   /**
    * Class representing the "wowza" subfield.
