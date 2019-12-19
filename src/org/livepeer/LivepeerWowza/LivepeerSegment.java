@@ -47,21 +47,18 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
    */
   public void uploadSegment(final Integer attempt) {
     String segmentUri = getSegmentUri();
+    String id = livepeerStream.getLivepeerId();
     if (attempt >= uploadAttempts) {
-      logger.error("canonical-log-line function=uploadSegment phase=giveup uri=" + segmentUri);
+      logger.error("canonical-log-line function=uploadSegment id=" + id + " phase=giveup uri=" + segmentUri);
       return;
     }
     LiveStreamPacketizerCupertinoChunk chunkInfo = (LiveStreamPacketizerCupertinoChunk) mediaSegment.getChunkInfoCupertino();
     livepeerStream.getExecutorService().execute(() -> {
+      logger.error("canonical-log-line function=uploadSegment id=" + id + " phase=start uri=" + segmentUri);
       try {
         if (chunkInfo == null || list == null || list.size() == 0) {
-          System.out.println("chunkInfo null segmentUri=" + segmentUri);
-          return;
+          throw new RuntimeException("chunkInfo=null attempt="+attempt);
         }
-        else {
-          System.out.println("chunkInfo non-null segmentUri=" + segmentUri);
-        }
-        String id = livepeerStream.getLivepeerId();
         String url = livepeerBroadcaster.getAddress() + "/live/" + id + "/" + segmentUri;
         // We're not expecting anything until we send the full segment, so:
         int socketTimeout = Math.toIntExact(chunkInfo.getDuration()) * 3;

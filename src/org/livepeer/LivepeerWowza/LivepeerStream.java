@@ -93,7 +93,7 @@ public class LivepeerStream extends Thread {
     private Map<String, Publisher> duplicateStreamPublishers = new HashMap<String, Publisher>();
     private ExecutorService executorService = Executors.newFixedThreadPool(10);
     private boolean shouldDuplicateStreams;
-    private SortedSet segments = Collections.synchronizedSortedSet(new TreeSet<LivepeerSegment>());
+    private SortedSet<LivepeerSegment> segments = Collections.synchronizedSortedSet(new TreeSet<LivepeerSegment>());
     private Timer smilTimer;
 
     // These two flags control how we handle interrupts
@@ -719,8 +719,8 @@ public class LivepeerStream extends Thread {
      */
     public void newSegment(MediaSegmentModel mediaSegment) {
         LivepeerSegment livepeerSegment = new LivepeerSegment(mediaSegment, this);
-        livepeerSegment.uploadSegment(0);
         segments.add(livepeerSegment);
+        livepeerSegment.uploadSegment(0);
     }
 
     public WMSLogger getLogger() {
