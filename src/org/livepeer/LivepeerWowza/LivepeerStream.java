@@ -1,6 +1,5 @@
 package org.livepeer.LivepeerWowza;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wowza.wms.amf.AMFPacket;
 import com.wowza.wms.application.IApplicationInstance;
 import com.wowza.wms.logging.WMSLogger;
@@ -181,8 +180,8 @@ public class LivepeerStream extends Thread {
         hlsPush.connect();
 
         // Start HLS pulling via Stream Files
-        this.startStreamFiles();
-        this.startSmilFile();
+//        this.startStreamFiles();
+//        this.startSmilFile();
         this.startDuplicateStreams();
 
         logger.info(streamName + "canonical-log-line function=startStream phase=end");
@@ -596,9 +595,6 @@ public class LivepeerStream extends Thread {
             params.add(new BasicNameValuePair("appType", "live"));
             String queryParam = URLEncodedUtils.format(params, "UTF-8");
             WMSResponse response = streamFile.connectAction(queryParam);
-            logger.info("LIVEPEER Message=" + response.getMessage());
-            logger.info("LIVEPEER Data=" + response.getData());
-            logger.info("LIVEPEER query param map: " + streamFile.getQueryParamMap());
         }
     }
 
@@ -720,7 +716,7 @@ public class LivepeerStream extends Thread {
     public void newSegment(MediaSegmentModel mediaSegment) {
         LivepeerSegment livepeerSegment = new LivepeerSegment(mediaSegment, this);
         segments.add(livepeerSegment);
-        livepeerSegment.uploadSegment(0);
+        livepeerSegment.uploadSegment();
     }
 
     public WMSLogger getLogger() {
@@ -737,5 +733,9 @@ public class LivepeerStream extends Thread {
 
     public HttpClient getHttpClient() {
         return livepeer.getHttpClient();
+    }
+
+    public List<LivepeerAPIResourceStream.Profile> getProfiles() {
+        return this.livepeerStream.getProfiles();
     }
 }

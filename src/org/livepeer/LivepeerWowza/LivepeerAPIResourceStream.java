@@ -2,21 +2,10 @@ package org.livepeer.LivepeerWowza;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wowza.wms.media.model.MediaCodecInfoVideo;
-import com.wowza.wms.rest.ConfigBase;
 import com.wowza.wms.rest.ShortObject;
-import com.wowza.wms.rest.WMSResponse;
-import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFileAppAction;
-import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFileAppConfig;
-import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFileAppConfigAdv;
-import com.wowza.wms.rest.vhosts.applications.streamfiles.StreamFilesAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
 import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderTemplateAppConfig;
-import com.wowza.wms.rest.vhosts.streamfiles.StreamFileAction;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.message.BasicNameValuePair;
 
 import java.util.*;
 
@@ -27,15 +16,18 @@ import java.util.*;
 public class LivepeerAPIResourceStream {
   public final static String LIVEPEER_PREFIX = "livepeer_";
 
-  LivepeerAPIResourceStreamWowza wowza = new LivepeerAPIResourceStreamWowza();
+  Wowza wowza = new Wowza();
   // Don't push up a null id on the initial create
   @JsonInclude(JsonInclude.Include.NON_NULL)
   private String id;
   private String name;
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private List<String> presets = new ArrayList<String>();
   @JsonInclude(JsonInclude.Include.NON_NULL)
   private List<String> errors;
   private Map<String, String> renditions = new HashMap<String, String>();
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private List<Profile> profiles;
 
   /**
    * Create an empty API Resource. Mostly used by the JSON serializer when GETing objects
@@ -118,16 +110,69 @@ public class LivepeerAPIResourceStream {
     this.name = name;
   }
 
-  public LivepeerAPIResourceStreamWowza getWowza() {
+  public Wowza getWowza() {
     return wowza;
   }
 
-  public void setWowza(LivepeerAPIResourceStreamWowza wowza) {
+  public void setWowza(Wowza wowza) {
     this.wowza = wowza;
   }
 
+  public List<Profile> getProfiles() {
+    return profiles;
+  }
+
+  public void setProfiles(List<Profile> profiles) {
+    this.profiles = profiles;
+  }
+
   @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-  public static class LivepeerAPIResourceStreamProfile {
+  public static class Profile {
+    private String name;
+    private double fps;
+    private int bitrate;
+    private int width;
+    private int height;
+
+    public String getName() {
+      return name;
+    }
+
+    public void setName(String name) {
+      this.name = name;
+    }
+
+    public double getFps() {
+      return fps;
+    }
+
+    public void setFps(double fps) {
+      this.fps = fps;
+    }
+
+    public int getBitrate() {
+      return bitrate;
+    }
+
+    public void setBitrate(int bitrate) {
+      this.bitrate = bitrate;
+    }
+
+    public int getWidth() {
+      return width;
+    }
+
+    public void setWidth(int width) {
+      this.width = width;
+    }
+
+    public int getHeight() {
+      return height;
+    }
+
+    public void setHeight(int height) {
+      this.height = height;
+    }
   }
 
 
@@ -135,7 +180,7 @@ public class LivepeerAPIResourceStream {
    * Class representing the "wowza" subfield.
    */
   @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-  public static class LivepeerAPIResourceStreamWowza {
+  public static class Wowza {
     private Map<String, TranscoderTemplateAppConfig> transcoderTemplateAppConfig = new HashMap<>();
     private TranscoderAppConfig transcoderAppConfig;
     private LivepeerAPIResourceStreamWowzaSourceInfo sourceInfo = new LivepeerAPIResourceStreamWowzaSourceInfo();
