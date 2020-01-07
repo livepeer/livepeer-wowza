@@ -1,18 +1,11 @@
 package org.livepeer.LivepeerWowza;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wowza.wms.application.IApplicationInstance;
-import com.wowza.wms.application.WMSProperties;
 import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.media.model.MediaCodecInfoVideo;
-import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
-import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderTemplateAppConfig;
-import com.wowza.wms.server.Server;
-import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -22,7 +15,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.config.SocketConfig;
-import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -31,9 +23,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContexts;
-import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -46,10 +36,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class LivepeerAPI {
 
   private static LivepeerAPI _instance;
+  private Map<String, LivepeerStream> livepeerStreams = new ConcurrentHashMap<String, LivepeerStream>();
+
   private IApplicationInstance appInstance;
   private static ConcurrentHashMap<IApplicationInstance, LivepeerAPI> apiInstances = new ConcurrentHashMap<>();
   private String livepeerApiUrl;
@@ -231,5 +225,38 @@ public class LivepeerAPI {
     Random rand = new Random();
     List<LivepeerAPIResourceBroadcaster> broadcasters = this.getBroadcasters();
     return broadcasters.get(rand.nextInt(broadcasters.size()));
+  }
+
+  public LivepeerStream getLivepeerStream(String id) {
+    return this.livepeerStreams.get(id);
+  }
+
+  public void addLivepeerStream(LivepeerStream livepeerStream) {
+    this.livepeerStreams.put(livepeerStream.getStreamId(), livepeerStream);
+  }
+
+  public byte[] getCachedSegment(String url) {
+    String pattern = "^/stream/([0-9a-f-]+)/(.*)/([0-9]+).ts$";
+    URL parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch (MalformedURLException e) {
+      System.out.println("MATCH foo");
+      return null;
+    }
+
+    Pattern r = Pattern.compile(pattern);
+    Matcher m = r.matcher(parsedUrl.getPath());
+
+    if (!m.find()) {
+      System.out.println("NO MATCH");
+      return null;
+    }
+
+    String id = m.group(1);
+    String renditionName = m.group(2);
+    int sequenceNumber = Integer.parseInt(m.group(3));
+
+    return null;
   }
 }

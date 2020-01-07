@@ -162,7 +162,7 @@ public class LivepeerStream extends Thread {
 
         // Create /api/stream
         livepeerStream = this.createStreamRetry();
-        this.id = "livepeer-" + livepeerStream.getId();
+        this.id = livepeerStream.getId();
         LivepeerStream.livepeerStreams.put(this.id, this);
         logger.info("created livepeerStreamId=" + livepeerStream.getId());
 
@@ -180,8 +180,8 @@ public class LivepeerStream extends Thread {
         hlsPush.connect();
 
         // Start HLS pulling via Stream Files
-//        this.startStreamFiles();
-//        this.startSmilFile();
+        this.startStreamFiles();
+        this.startSmilFile();
         this.startDuplicateStreams();
 
         logger.info(streamName + "canonical-log-line function=startStream phase=end");
@@ -737,5 +737,9 @@ public class LivepeerStream extends Thread {
 
     public List<LivepeerAPIResourceStream.Profile> getProfiles() {
         return this.livepeerStream.getProfiles();
+    }
+
+    public String getStreamId() {
+        return this.id;
     }
 }

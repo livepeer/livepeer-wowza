@@ -39,10 +39,10 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
       try {
         HttpGet req = new HttpGet(path);
         RequestConfig requestConfig = RequestConfig.custom()
-                .setSocketTimeout(timeout)
-                .setConnectTimeout(timeout)
-                .setConnectionRequestTimeout(timeout)
-                .build();
+          .setSocketTimeout(timeout)
+          .setConnectTimeout(timeout)
+          .setConnectionRequestTimeout(timeout)
+          .build();
         req.setConfig(requestConfig);
         LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
         long start = System.currentTimeMillis();
@@ -95,22 +95,23 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
 
   @Override
   public CupertinoMediaCasterFetchedResult fetchBlock(String path, int timeout, int retries) {
-    livepeer.log(" LivepeerCupertinoMediaCasterChunkFetch fetchBlock(" + path + ", " + timeout + ", " + retries + ")");
     //if not success set to 404
+    System.out.println("MATCH BEFORE");
+    byte[] data = livepeer.getCachedSegment(path);
+    System.out.println("MATCH AFTER");
     for (int i = 0; i < retries; i += 1) {
       try {
         HttpGet req = new HttpGet(path);
         RequestConfig requestConfig = RequestConfig.custom()
-                .setSocketTimeout(timeout)
-                .setConnectTimeout(timeout)
-                .setConnectionRequestTimeout(timeout)
-                .build();
+          .setSocketTimeout(timeout)
+          .setConnectTimeout(timeout)
+          .setConnectionRequestTimeout(timeout)
+          .build();
         req.setConfig(requestConfig);
         LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
         long start = System.currentTimeMillis();
         HttpResponse res = httpClient.execute(req);
         double elapsed = (System.currentTimeMillis() - start) / (double) 1000;
-        livepeer.getLogger().info("fetchBlock(" + path + ") returned " + res.getStatusLine());
         httpResult.setResultType(CupertinoMediaCasterFetchedResult.dataType);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         res.getEntity().writeTo(baos);

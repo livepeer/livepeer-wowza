@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ModuleLivepeerWowza extends ModuleBase {
 	private IApplicationInstance appInstance;
 	private LivepeerAPI livepeer;
-	private ConcurrentHashMap<String, LivepeerStream> livepeerStreams = new ConcurrentHashMap<>();
 
 	class StreamListener implements IMediaStreamActionNotify3 {
 		public void onPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
@@ -141,8 +140,6 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 		stream.addClientListener(actionNotify);
 		stream.addLivePacketListener(new PacketListener());
-		getLogger().info("LIVEPEER onStreamCreate[" + stream + "]: clientId:" + stream.getClientId());
-		getLogger().info("LIVEPEER onStreamCreate stream=" + stream.isPublisherStream());
 	}
 
 }
