@@ -35,6 +35,7 @@ FROM wowzamedia/wowza-streaming-engine-linux@sha256:904d95965cfdbec477a81374fcd2
 
 RUN apt-get update \
   && apt-get install -y software-properties-common \
+  && add-apt-repository ppa:savoury1/backports \
   && add-apt-repository ppa:savoury1/graphics \
   && add-apt-repository ppa:savoury1/multimedia \
   && add-apt-repository ppa:savoury1/ffmpeg4 \
