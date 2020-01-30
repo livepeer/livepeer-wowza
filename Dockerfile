@@ -13,9 +13,10 @@ RUN ./build-trust-store.sh /usr/local/WowzaStreamingEngine/jre
 RUN cp /usr/local/WowzaStreamingEngine/jre/jre/lib/security/cacerts ./livepeer_cacerts
 ARG version
 ENV VERSION=$version
+ADD vendor vendor
 ADD src src
 RUN sed -i "s/UNKNOWN_VERSION/${VERSION}/g" src/org/livepeer/LivepeerWowza/LivepeerVersion.java
-RUN mkdir bin && ant -lib /usr/local/WowzaStreamingEngine/lib -Dwowza.lib.dir=/usr/local/WowzaStreamingEngine/lib
+RUN mkdir bin && ant -lib /usr/local/WowzaStreamingEngine/lib -lib ./vendor -Dwowza.lib.dir=/usr/local/WowzaStreamingEngine/lib
 
 FROM golang:1.12-buster as installer
 RUN apt-get update && apt-get install -y libxml2-dev libonig-dev liblzma-dev zlib1g-dev libgmp-dev libicu-dev

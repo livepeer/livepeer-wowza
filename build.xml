@@ -4,10 +4,16 @@
 	<property name="wowza.lib.dir" value="/Library/WowzaStreamingEngine/lib"/>
 	<property name="jar.filename" value="LivepeerWowza.jar"/>
 	<property name="core.build.dir" value="bin"/>
+	<property name="vendor.lib.dir" value="vendor"/>
 
 	<target name="jar">
 		<mkdir dir="bin/classes"/>
 		<javac srcdir="src" destdir="bin/classes" debug="true" />
+		<unzip dest="bin/classes">
+			<fileset dir="${vendor.lib.dir}">
+				<include name="**/*.jar"/>
+			</fileset>
+		</unzip>
 		<jar basedir="bin/classes" jarfile="${wowza.lib.dir}/${jar.filename}">
 			<manifest>
 				<attribute name="Main-Class" value="org.livepeer.LivepeerWowza.ModuleLivepeerWowza"/>

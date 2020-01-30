@@ -5,6 +5,8 @@ import com.wowza.util.PacketFragmentList;
 import com.wowza.wms.httpstreamer.cupertinostreaming.livestreampacketizer.LiveStreamPacketizerCupertinoChunk;
 import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.manifest.model.m3u8.MediaSegmentModel;
+import org.apache.commons.fileupload.MultipartStream;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -12,11 +14,12 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
 import org.apache.http.util.EntityUtils;
+import org.apache.james.mime4j.dom.Message;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -129,13 +132,44 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
         double elapsed = (System.currentTimeMillis() - start) / (double) 1000;
         // Consume the response entity to free the thread
         HttpEntity responseEntity = res.getEntity();
+        ContentType contentType = ContentType.get(responseEntity);
+        String boundaryText = contentType.getParameter("boundary");
+
+
+        try {
+          MultipartStream multipartStream = new MultipartStream(
+                  responseEntity.getContent(),
+                  boundaryText.getBytes());
+          boolean nextPart = multipartStream.skipPreamble();
+          OutputStream output;
+          while(nextPart) {
+            String header = multipartStream.readHeaders();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+            // process headers
+            // create some output stream
+            multipartStream.readBodyData(baos);
+            logger.info("Header: " + header);
+            logger.info("Size: " + baos.toByteArray().length);
+
+            nextPart = multipartStream.readBoundary();
+          }
+        } catch(MultipartStream.MalformedStreamException e) {
+          // the stream failed to follow required syntax
+          throw new RuntimeException("MultipartStream.MalformedStreamException");
+        } catch(IOException e) {
+          // a read or write error occurred
+          throw new RuntimeException("IOException");
+        }
+
+
+        EntityUtils.consume(responseEntity);
+
         long contentLength = responseEntity.getContentLength();
         int status = res.getStatusLine().getStatusCode();
         logger.info("canonical-log-line function=uploadSegment id=" + id + " phase=uploaded responseLength=" + contentLength + " elapsed=" + elapsed + " url=" + url + " status=" + status + " resolution=" + resolution + " size=" + data.length);
-        byte[] responseContent = EntityUtils.toByteArray(responseEntity);
         elapsed = (System.currentTimeMillis() - start) / (double) 1000;
-        logger.info("canonical-log-line function=uploadSegment phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (duration / (double) 1000) + " resolution=" + resolution + " responseSize=" + responseContent.length);
-        this.downloadSegments();
+        logger.info("canonical-log-line function=uploadSegment phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (duration / (double) 1000) + " resolution=" + resolution + " responseSize=REDACTED");
       } catch (Exception e) {
         e.printStackTrace();
         logger.error("canonical-log-line function=uploadSegment phase=error uri=" + segmentUri + " error=" + e);
