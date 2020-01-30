@@ -24,38 +24,35 @@ public class ModuleLivepeerWowza extends ModuleBase {
 
 	class StreamListener implements IMediaStreamActionNotify3 {
 		public void onPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
-			LivepeerStream manager = findStreamManager(streamName);
+			LivepeerStream manager = livepeer.findStreamManager(streamName);
 			if (manager != null) {
 				getLogger().info("LIVEPEER ignoring transcoded rendition " + streamName);
 				return;
 			}
 
-			LivepeerStream livepeerStream = new LivepeerStream(stream, streamName, livepeer);
-			livepeerStreams.put(streamName, livepeerStream);
+			livepeer.addLivepeerStream(stream, streamName);
 		}
 
 		public void onUnPublish(IMediaStream stream, String streamName, boolean isRecord, boolean isAppend) {
-			LivepeerStream livepeerStream = livepeerStreams.get(stream.getName());
+			LivepeerStream livepeerStream = livepeer.getLivepeerStream(stream.getName());
 			if (livepeerStream != null) {
-				livepeerStream.stopStream();
-				livepeerStreams.remove(stream.getName());
+				livepeer.stopLivepeerStream(livepeerStream);
 			}
 		}
 
 		public void onCodecInfoVideo(IMediaStream stream, MediaCodecInfoVideo codecInfoVideo) {
 			getLogger().info("CodecInfoVideo for " + stream.getName());
-			if (livepeerStreams.containsKey(stream.getName())) {
-				LivepeerStream livepeerStream = livepeerStreams.get(stream.getName());
+			// We just got some video codec info for a stream. If it's a transcoded rendition, tell its source.
+			LivepeerStream manager = livepeer.findStreamManager(stream.getName());
+			LivepeerStream livepeerStream = livepeer.getLivepeerStream(stream.getName());
+			if (manager != null) {
+				manager.onStreamFileCodecInfoVideo(stream, codecInfoVideo);
+			}
+			// Otherwise, if it's a source itself, this means we can actually start sending video!
+			else if (livepeerStream != null) {
 				livepeerStream.setCodecInfoVideo(codecInfoVideo);
 				livepeerStream.start();
-				return;
 			}
-			LivepeerStream manager = findStreamManager(stream.getName());
-			if (manager == null) {
-				// Not a transcoded rendition, ignore.
-				return;
-			}
-			manager.onStreamFileCodecInfoVideo(stream, codecInfoVideo);
 		}
 
 		public void onStop(IMediaStream stream) {}
@@ -90,31 +87,12 @@ public class ModuleLivepeerWowza extends ModuleBase {
             if (streamName == null || !streamName.endsWith(".stream")) {
                 return;
             }
-            LivepeerStream manager = findStreamManager(streamName);
+            LivepeerStream manager = livepeer.findStreamManager(streamName);
             if (manager == null) {
                 return;
             }
             manager.onPacket(stream, packet);
 		}
-	}
-
-	/**
-	 * Find the LivepeerStream that is handling this incoming transcoded rendition, if any
-	 * @param streamName name of incoming stream
-	 * @return LivepeerStream in charge of this rendition or null if not found
-	 */
-	public LivepeerStream findStreamManager(String streamName) {
-		// Avoid an infinite loop - if this new stream is a transcoded rendition or one of our streamfiles,
-		// don't transcode again
-		if (streamName.endsWith(".stream")) {
-            streamName = streamName.substring(0, streamName.length() - 7);
-		}
-		for (LivepeerStream livepeerStream : livepeerStreams.values()) {
-				if (livepeerStream.managesStreamFile(streamName)) {
-						return livepeerStream;
-				}
-		}
-		return null;
 	}
 
 	public void onAppStart(IApplicationInstance appInstance) {

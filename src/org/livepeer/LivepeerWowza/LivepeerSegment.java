@@ -123,14 +123,18 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
         req.setEntity(new ByteArrayEntity(data));
         req.setHeader("Content-Duration", "" + this.duration);
         req.setHeader("Content-Resolution", this.resolution);
+        req.setHeader("Accept", "multipart/mixed");
         long start = System.currentTimeMillis();
         HttpResponse res = httpClient.execute(req);
         double elapsed = (System.currentTimeMillis() - start) / (double) 1000;
         // Consume the response entity to free the thread
         HttpEntity responseEntity = res.getEntity();
-        EntityUtils.consume(responseEntity);
+        long contentLength = responseEntity.getContentLength();
         int status = res.getStatusLine().getStatusCode();
-        logger.info("canonical-log-line function=uploadSegment phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (duration / (double) 1000) + " resolution=" + resolution + " size=" + data.length);
+        logger.info("canonical-log-line function=uploadSegment id=" + id + " phase=uploaded responseLength=" + contentLength + " elapsed=" + elapsed + " url=" + url + " status=" + status + " resolution=" + resolution + " size=" + data.length);
+        byte[] responseContent = EntityUtils.toByteArray(responseEntity);
+        elapsed = (System.currentTimeMillis() - start) / (double) 1000;
+        logger.info("canonical-log-line function=uploadSegment phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (duration / (double) 1000) + " resolution=" + resolution + " responseSize=" + responseContent.length);
         this.downloadSegments();
       } catch (Exception e) {
         e.printStackTrace();

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wowza.wms.application.IApplicationInstance;
 import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.media.model.MediaCodecInfoVideo;
+import com.wowza.wms.stream.IMediaStream;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -231,8 +232,33 @@ public class LivepeerAPI {
     return this.livepeerStreams.get(id);
   }
 
-  public void addLivepeerStream(LivepeerStream livepeerStream) {
-    this.livepeerStreams.put(livepeerStream.getStreamId(), livepeerStream);
+  /**
+   * Find the LivepeerStream that is handling this incoming transcoded rendition, if any
+   * @param streamName name of incoming stream
+   * @return LivepeerStream in charge of this rendition or null if not found
+   */
+  public LivepeerStream findStreamManager(String streamName) {
+    // Avoid an infinite loop - if this new stream is a transcoded rendition or one of our streamfiles,
+    // don't transcode again
+    if (streamName.endsWith(".stream")) {
+      streamName = streamName.substring(0, streamName.length() - 7);
+    }
+    for (LivepeerStream livepeerStream : livepeerStreams.values()) {
+      if (livepeerStream.managesStreamFile(streamName)) {
+        return livepeerStream;
+      }
+    }
+    return null;
+  }
+
+  public void addLivepeerStream(IMediaStream wowzaStream, String wowzaStreamName) {
+    LivepeerStream livepeerStream = new LivepeerStream(wowzaStream, wowzaStreamName, this);
+    this.livepeerStreams.put(wowzaStreamName, livepeerStream);
+  }
+
+  public void stopLivepeerStream(LivepeerStream livepeerStream) {
+    livepeerStream.stopStream();
+    this.livepeerStreams.remove(livepeerStream.getStreamId());
   }
 
   public byte[] getCachedSegment(String url) {
