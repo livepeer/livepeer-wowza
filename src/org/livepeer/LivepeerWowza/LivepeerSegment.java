@@ -5,6 +5,7 @@ import com.wowza.util.PacketFragmentList;
 import com.wowza.wms.httpstreamer.cupertinostreaming.livestreampacketizer.LiveStreamPacketizerCupertinoChunk;
 import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.manifest.model.m3u8.MediaSegmentModel;
+import org.apache.commons.fileupload.FileUploadBase;
 import org.apache.commons.fileupload.MultipartStream;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -15,14 +16,13 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
+import org.apache.http.message.BasicLineParser;
+import org.apache.http.message.LineParser;
 import org.apache.http.util.EntityUtils;
 import org.apache.james.mime4j.dom.Message;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LivepeerSegment implements Comparable<LivepeerSegment> {
   public static final int UPLOAD_RETRIES = 3;
   public static final String SOURCE = "source";
+  public static final String MIME_HEADER_RENDITION_NAME = "Rendition-Name";
 
   protected MediaSegmentModel mediaSegment;
   protected LivepeerStream livepeerStream;
@@ -118,8 +119,9 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
     livepeerStream.getExecutorService().execute(() -> {
       logger.error("canonical-log-line function=uploadSegment id=" + id + " phase=start uri=" + segmentUri);
       try {
+
+        // Initialize PUT request
         String url = livepeerBroadcaster.getAddress() + "/live/" + id + "/" + segmentUri;
-        // We're not expecting anything until we send the full segment, so:
         HttpPut req = new HttpPut(url);
         req.setConfig(requestConfig);
         byte[] data = buffers.get(SOURCE);
@@ -128,46 +130,53 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
         req.setHeader("Content-Resolution", this.resolution);
         req.setHeader("Accept", "multipart/mixed");
         long start = System.currentTimeMillis();
+
+        // Execute request
         HttpResponse res = httpClient.execute(req);
+
+        // Upload complete; initialize multipart parsing
         double elapsed = (System.currentTimeMillis() - start) / (double) 1000;
-        // Consume the response entity to free the thread
         HttpEntity responseEntity = res.getEntity();
+        int status = res.getStatusLine().getStatusCode();
+        logger.info("canonical-log-line function=uploadSegment id=" + id + " phase=uploaded responseLength=" + " elapsed=" + elapsed + " url=" + url + " status=" + status + " resolution=" + resolution + " size=" + data.length);
         ContentType contentType = ContentType.get(responseEntity);
         String boundaryText = contentType.getParameter("boundary");
+        MultipartStream multipartStream = new MultipartStream(
+                responseEntity.getContent(),
+                boundaryText.getBytes());
+        boolean nextPart = multipartStream.skipPreamble();
+        int i = 0;
+        List<LivepeerAPIResourceStream.Profile> profiles = livepeerStream.getProfiles();
 
-
-        try {
-          MultipartStream multipartStream = new MultipartStream(
-                  responseEntity.getContent(),
-                  boundaryText.getBytes());
-          boolean nextPart = multipartStream.skipPreamble();
-          OutputStream output;
-          while(nextPart) {
-            String header = multipartStream.readHeaders();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            // process headers
-            // create some output stream
-            multipartStream.readBodyData(baos);
-            logger.info("Header: " + header);
-            logger.info("Size: " + baos.toByteArray().length);
-
-            nextPart = multipartStream.readBoundary();
+        // Save each transcoded renditional locally by their Rendition-Name
+        while(nextPart) {
+          // Find Rendition-Name
+          String headersStr = multipartStream.readHeaders();
+          String renditionName = null;
+          for (String line : headersStr.split("\r\n")) {
+            Header header = BasicLineParser.parseHeader(line, null);
+            if (header.getName().equals(MIME_HEADER_RENDITION_NAME)) {
+              renditionName = header.getValue();
+            }
           }
-        } catch(MultipartStream.MalformedStreamException e) {
-          // the stream failed to follow required syntax
-          throw new RuntimeException("MultipartStream.MalformedStreamException");
-        } catch(IOException e) {
-          // a read or write error occurred
-          throw new RuntimeException("IOException");
+
+          // Fallback for go-livepeer < v0.5.4 which lacks Rendition-Name
+          if (renditionName == null) {
+            renditionName = profiles.get(i).getName();
+            logger.info("Couldn't find " + MIME_HEADER_RENDITION_NAME + ", falling back to positional profile: " + renditionName);
+          }
+
+          // Dump rendition into a byte[]
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          multipartStream.readBodyData(baos);
+          buffers.put(renditionName, baos.toByteArray());
+          nextPart = multipartStream.readBoundary();
+          i += 1;
         }
 
+        // todo: is this still necessary, or has the response now been fully read?
+        EntityUtils.consumeQuietly(responseEntity);
 
-        EntityUtils.consume(responseEntity);
-
-        long contentLength = responseEntity.getContentLength();
-        int status = res.getStatusLine().getStatusCode();
-        logger.info("canonical-log-line function=uploadSegment id=" + id + " phase=uploaded responseLength=" + contentLength + " elapsed=" + elapsed + " url=" + url + " status=" + status + " resolution=" + resolution + " size=" + data.length);
         elapsed = (System.currentTimeMillis() - start) / (double) 1000;
         logger.info("canonical-log-line function=uploadSegment phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (duration / (double) 1000) + " resolution=" + resolution + " responseSize=REDACTED");
       } catch (Exception e) {
@@ -177,40 +186,6 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
         this.uploadSegment();
       }
     });
-  }
-
-  public void downloadSegments() {
-    List<LivepeerAPIResourceStream.Profile> profiles = livepeerStream.getProfiles();
-    final String id = livepeerStream.getLivepeerId();
-    final String filename = getSequenceNumber() + ".ts";
-    LiveStreamPacketizerCupertinoChunk chunkInfo = (LiveStreamPacketizerCupertinoChunk) mediaSegment.getChunkInfoCupertino();
-    for (final LivepeerAPIResourceStream.Profile profile : profiles) {
-      String name = profile.getName();
-      String url = livepeerBroadcaster.getAddress() + "/stream/" + id + "/" + name + "/" + filename;
-      livepeerStream.getExecutorService().execute(() -> {
-        try {
-          logger.info("canonical-log-line function=downloadSegment phase=start url=" + url);
-          HttpGet req = new HttpGet(url);
-          req.setConfig(requestConfig);
-          long start = System.currentTimeMillis();
-          HttpResponse res = httpClient.execute(req);
-          double elapsed = (System.currentTimeMillis() - start) / (double) 1000;
-          // Consume the response entity to free the thread
-          HttpEntity responseEntity = res.getEntity();
-          ByteArrayOutputStream baos = new ByteArrayOutputStream();
-          responseEntity.writeTo(baos);
-          int status = res.getStatusLine().getStatusCode();
-          byte[] data = baos.toByteArray();
-          buffers.put(name, data);
-          logger.info("canonical-log-line function=downloadSegment phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " size=" + data.length);
-        } catch (Exception e) {
-          e.printStackTrace();
-          logger.error("canonical-log-line function=downloadSegment phase=error url=" + url + " error=" + e);
-          livepeerStream.notifyBroadcasterProblem(livepeerBroadcaster);
-          this.uploadSegment();
-        }
-      });
-    }
   }
 
   /**
