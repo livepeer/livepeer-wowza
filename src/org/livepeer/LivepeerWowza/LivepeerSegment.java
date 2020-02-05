@@ -57,7 +57,6 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
     this.segmentUri = mediaSegment.getUri().toString().replace("media_", "");
     String[] parts = this.segmentUri.split("\\/");
     this.sequenceNumber = Integer.parseInt(parts[parts.length - 1].replace(".ts", ""));
-    logger.info("SEQUENCE NUMBER +=+++ " + this.sequenceNumber);
     httpClient = livepeerStream.getHttpClient();
     PacketFragmentList list = mediaSegment.getFragmentList();
     livepeerBroadcaster = livepeerStream.getBroadcaster();
@@ -149,7 +148,7 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
         int i = 0;
         List<LivepeerAPIResourceStream.Profile> profiles = livepeerStream.getProfiles();
 
-        // Save each transcoded renditional locally by their Rendition-Name
+        // Save each transcoded renditions locally by their Rendition-Name
         while(nextPart) {
           // Find Rendition-Name
           String headersStr = multipartStream.readHeaders();
@@ -180,6 +179,7 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
 
         elapsed = (System.currentTimeMillis() - start) / (double) 1000;
         this.ready = true;
+        livepeerStream.pruneSegments();
         logger.info("canonical-log-line function=uploadSegment phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (duration / (double) 1000) + " resolution=" + resolution + " responseSize=REDACTED");
       } catch (Exception e) {
         e.printStackTrace();

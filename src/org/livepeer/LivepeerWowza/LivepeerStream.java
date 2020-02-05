@@ -68,6 +68,7 @@ public class LivepeerStream extends Thread {
     public final static String LIVEPEER_SUFFIX = "_livepeer";
     public final static int SMIL_CHECK_INTERVAL = 3000;
     public final static int START_STREAM_RETRY_INTERVAL = 3000;
+    public final static int HLS_BUFFER_SIZE = 5;
 
     private static ConcurrentHashMap<String, LivepeerStream> livepeerStreams = new ConcurrentHashMap<>();
 
@@ -793,5 +794,33 @@ public class LivepeerStream extends Thread {
         lines.add("#EXT-X-TARGETDURATION:2");
         lines.addAll(segmentLines);
         return String.join("\n", lines);
+    }
+
+    /**
+     * Called after an upload has succeeded; prunes old segments so we keep only 5, avoids
+     * buffering all video forever
+     */
+    public void pruneSegments() {
+        int earliest = -1;
+        int latest = -1;
+        for (LivepeerSegment segment : segments.values()) {
+            if (!segment.isReady()) {
+                break;
+            }
+            if (earliest == -1) {
+                earliest = segment.getSequenceNumber();
+            }
+            latest = segment.getSequenceNumber();
+        }
+        // No content
+        if (earliest == -1 || latest == -1) {
+            return;
+        }
+        if (latest - earliest > HLS_BUFFER_SIZE) {
+            int cutoff = latest - HLS_BUFFER_SIZE;
+            for (int i = earliest; i < cutoff; i += 1) {
+                segments.remove(i);
+            }
+        }
     }
 }

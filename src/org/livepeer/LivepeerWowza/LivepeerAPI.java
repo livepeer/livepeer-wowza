@@ -267,7 +267,7 @@ public class LivepeerAPI {
    * @return
    */
   public byte[] getCachedSegment(String url) {
-    logger.info("canonical-log-line function=getCachedSegment phase=start url="+url);
+    // logger.info("canonical-log-line function=getCachedSegment phase=start url="+url);
     String pattern = "^/stream/([0-9a-f-]+)/(.*)/([0-9]+).ts$";
     URL parsedUrl;
     try {
@@ -297,7 +297,7 @@ public class LivepeerAPI {
       return null;
     }
 
-    logger.info("canonical-log-line function=getCachedSegment phase=success url="+url);
+    // logger.info("canonical-log-line function=getCachedSegment phase=success url="+url);
     return ret;
   }
 
@@ -307,7 +307,7 @@ public class LivepeerAPI {
    * @return
    */
   public String getManifest(String url) {
-    logger.info("canonical-log-line function=getManifest phase=start url="+url);
+    // logger.info("canonical-log-line function=getManifest phase=start url="+url);
     String pattern = "^/stream/([0-9a-f-]+)/(.*).m3u8$";
     URL parsedUrl;
     try {
@@ -336,7 +336,7 @@ public class LivepeerAPI {
       return null;
     }
 
-    logger.info("canonical-log-line function=getManifest phase=success url="+url);
+    // logger.info("canonical-log-line function=getManifest phase=success url="+url);
     return ret;
   }
 }

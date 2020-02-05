@@ -42,7 +42,6 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
       httpResult.setResultString(manifest);
       httpResult.setTimedOut(false);
       httpResult.setResultCode(200);
-      System.out.println(manifest);
       return httpResult;
     }
     if (true) {
