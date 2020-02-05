@@ -764,4 +764,34 @@ public class LivepeerStream extends Thread {
     public String getStreamId() {
         return this.id;
     }
+
+    public String getManifest(String renditionName) {
+        List<String> lines = new ArrayList();
+        lines.add("#EXTM3U");
+        lines.add("#EXT-X-VERSION:3");
+        LivepeerSegment earliest = null;
+        List<String> segmentLines = new ArrayList();
+        for (LivepeerSegment segment : segments.values()) {
+            if (!segment.isReady()) {
+                break;
+            }
+            if (earliest == null) {
+                earliest = segment;
+            }
+            long duration = segment.getDuration();
+            int seq = segment.getSequenceNumber();
+            String livepeerId = this.getLivepeerId();
+            String durationStr = String.format("%.3f", (double) segment.getDuration() / 1000);
+            segmentLines.add("#EXTINF:" + durationStr + ",");
+            segmentLines.add("https://example.com/stream/" + livepeerId + "/" + renditionName + "/" + seq + ".ts");
+        }
+        int earliestSeq = 0;
+        if (earliest != null) {
+            earliestSeq = earliest.getSequenceNumber();
+        }
+        lines.add("#EXT-X-MEDIA-SEQUENCE:" + earliestSeq);
+        lines.add("#EXT-X-TARGETDURATION:2");
+        lines.addAll(segmentLines);
+        return String.join("\n", lines);
+    }
 }

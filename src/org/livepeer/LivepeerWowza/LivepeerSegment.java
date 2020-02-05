@@ -208,6 +208,14 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
     return this.buffers.get(rendition);
   }
 
+  public long getDuration() {
+      return this.duration;
+  }
+
+  public boolean isReady() {
+      return this.ready;
+  }
+
   @Override
   public int compareTo(LivepeerSegment that) {
     return this.getSequenceNumber() - that.getSequenceNumber();

@@ -35,6 +35,19 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
    */
   @Override
   public CupertinoMediaCasterFetchedResult fetchManifest(String path, int timeout, int retries) {
+    LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
+    httpResult.setResultType(CupertinoMediaCasterFetchedResult.textType);
+    String manifest = livepeer.getManifest(path);
+    if (manifest != null) {
+      httpResult.setResultString(manifest);
+      httpResult.setTimedOut(false);
+      httpResult.setResultCode(200);
+      System.out.println(manifest);
+      return httpResult;
+    }
+    if (true) {
+      throw new RuntimeException("got HLS request for livepeer stream, should be cached instead");
+    }
     for (int i = 0; i < retries; i += 1) {
       try {
         HttpGet req = new HttpGet(path);
@@ -44,14 +57,12 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
           .setConnectionRequestTimeout(timeout)
           .build();
         req.setConfig(requestConfig);
-        LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
         long start = System.currentTimeMillis();
         HttpResponse res = httpClient.execute(req);
         double elapsed = (System.currentTimeMillis() - start) / (double) 1000;
         String responseString = new BasicResponseHandler().handleResponse(res);
         String outputString = fixAbsoluteUrls(responseString, path);
         httpResult.setResultString(outputString);
-        httpResult.setResultType(CupertinoMediaCasterFetchedResult.textType);
         httpResult.setTimedOut(false);
         httpResult.setResultCode(200);
         livepeer.getLogger().info("canonical-log-line function=fetchManifest elapsed=" + elapsed + " url=" + path + " status=" + res.getStatusLine());
@@ -60,7 +71,6 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
         livepeer.getLogger().error("GET " + path + " failed, retry #" + i + ": "+ e.getMessage());
       }
     }
-    LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
     httpResult.setResultCode(404);
     httpResult.setTimedOut(true);
     return httpResult;
@@ -105,7 +115,7 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
       return httpResult;
     }
     if (true) {
-      throw new RuntimeException("invalid code path");
+      throw new RuntimeException("got HLS request for livepeer stream, should be cached instead");
     }
     for (int i = 0; i < retries; i += 1) {
       try {
@@ -124,7 +134,7 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
         httpResult.setDataBlock(baos.toByteArray());
         httpResult.setTimedOut(false);
         httpResult.setResultCode(200);
-        livepeer.getLogger().info("canonical-log-line function=fetchManifest elapsed=" + elapsed + " url=" + path + " status=" + res.getStatusLine());
+        livepeer.getLogger().info("canonical-log-line function=fetchBlock elapsed=" + elapsed + " url=" + path + " status=" + res.getStatusLine());
         return httpResult;
       } catch (IOException e) {
         livepeer.getLogger().error("GET " + path + " failed, retry #" + i + ": "+ e.getMessage());

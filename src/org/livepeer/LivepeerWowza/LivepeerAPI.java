@@ -300,4 +300,43 @@ public class LivepeerAPI {
     logger.info("canonical-log-line function=getCachedSegment phase=success url="+url);
     return ret;
   }
+
+  /**
+   * Given a request for a segment from the Livepeer API, return the multipart-cached version if we have it
+   * @param url URL of the segment to request
+   * @return
+   */
+  public String getManifest(String url) {
+    logger.info("canonical-log-line function=getManifest phase=start url="+url);
+    String pattern = "^/stream/([0-9a-f-]+)/(.*).m3u8$";
+    URL parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch (MalformedURLException e) {
+      return null;
+    }
+
+    Pattern r = Pattern.compile(pattern);
+    Matcher m = r.matcher(parsedUrl.getPath());
+
+    if (!m.find()) {
+      return null;
+    }
+
+    String id = m.group(1);
+    String renditionName = m.group(2);
+
+    LivepeerStream livepeerStream = LivepeerStream.getFromId(id);
+    if (livepeerStream == null) {
+      return null;
+    }
+
+    String ret = livepeerStream.getManifest(renditionName);
+    if (ret == null) {
+      return null;
+    }
+
+    logger.info("canonical-log-line function=getManifest phase=success url="+url);
+    return ret;
+  }
 }
