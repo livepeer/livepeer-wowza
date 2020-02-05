@@ -95,10 +95,18 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
 
   @Override
   public CupertinoMediaCasterFetchedResult fetchBlock(String path, int timeout, int retries) {
-    //if not success set to 404
-    System.out.println("MATCH BEFORE");
+    LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
+    httpResult.setResultType(CupertinoMediaCasterFetchedResult.dataType);
     byte[] data = livepeer.getCachedSegment(path);
-    System.out.println("MATCH AFTER");
+    if (data != null) {
+      httpResult.setDataBlock(data);
+      httpResult.setTimedOut(false);
+      httpResult.setResultCode(200);
+      return httpResult;
+    }
+    if (true) {
+      throw new RuntimeException("invalid code path");
+    }
     for (int i = 0; i < retries; i += 1) {
       try {
         HttpGet req = new HttpGet(path);
@@ -108,11 +116,9 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
           .setConnectionRequestTimeout(timeout)
           .build();
         req.setConfig(requestConfig);
-        LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
         long start = System.currentTimeMillis();
         HttpResponse res = httpClient.execute(req);
         double elapsed = (System.currentTimeMillis() - start) / (double) 1000;
-        httpResult.setResultType(CupertinoMediaCasterFetchedResult.dataType);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         res.getEntity().writeTo(baos);
         httpResult.setDataBlock(baos.toByteArray());
@@ -124,7 +130,6 @@ public class LivepeerCupertinoMediaCasterChunkFetch implements ICupertinoMediaCa
         livepeer.getLogger().error("GET " + path + " failed, retry #" + i + ": "+ e.getMessage());
       }
     }
-    LivepeerCupertinoMediaCasterFetchedResult httpResult = new LivepeerCupertinoMediaCasterFetchedResult();
     httpResult.setResultCode(404);
     httpResult.setTimedOut(true);
     return httpResult;
