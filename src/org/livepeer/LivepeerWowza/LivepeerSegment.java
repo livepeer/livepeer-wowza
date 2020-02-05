@@ -48,6 +48,7 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
   private String segmentUri;
   private RequestConfig requestConfig;
   private Map<String, byte[]> buffers = new ConcurrentHashMap<String, byte[]>();
+  private boolean ready = false;
 
   public LivepeerSegment(MediaSegmentModel mediaSegment, LivepeerStream livepeerStream) {
     this.mediaSegment = mediaSegment;
@@ -178,6 +179,7 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
         EntityUtils.consumeQuietly(responseEntity);
 
         elapsed = (System.currentTimeMillis() - start) / (double) 1000;
+        this.ready = true;
         logger.info("canonical-log-line function=uploadSegment phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (duration / (double) 1000) + " resolution=" + resolution + " responseSize=REDACTED");
       } catch (Exception e) {
         e.printStackTrace();
@@ -197,6 +199,13 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
 
   public int getSequenceNumber() {
     return this.sequenceNumber;
+  }
+
+  public byte[] getRendition(String rendition) {
+    if (!this.ready) {
+      return null;
+    }
+    return this.buffers.get(rendition);
   }
 
   @Override

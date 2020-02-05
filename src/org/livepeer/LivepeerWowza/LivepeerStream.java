@@ -31,10 +31,7 @@ import org.apache.http.message.BasicNameValuePair;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Class for managing the lifecycle of a Livepeer stream. For example:
@@ -92,7 +89,8 @@ public class LivepeerStream extends Thread {
     private Map<String, Publisher> duplicateStreamPublishers = new HashMap<String, Publisher>();
     private ExecutorService executorService = Executors.newFixedThreadPool(10);
     private boolean shouldDuplicateStreams;
-    private SortedSet<LivepeerSegment> segments = Collections.synchronizedSortedSet(new TreeSet<LivepeerSegment>());
+    // Best concurrent-with-sorted-keys map I could find
+    private Map<Integer, LivepeerSegment> segments = new ConcurrentSkipListMap<>();
     private Timer smilTimer;
 
     // These two flags control how we handle interrupts
@@ -110,7 +108,20 @@ public class LivepeerStream extends Thread {
         return livepeerStreams.get(id);
     }
 
+    /**
+     * Retrieve a LivepeerStream by its Livepeer API ID (not to be confused with Wowza stream name)
+     *
+     * @param id id
+     * @return LivepeerStream if one exists
+     */
+    public static LivepeerStream getFromId(String id) {
+        return livepeerStreams.get(id);
+    }
 
+  /**
+   * Get ExecutorService used for thread pool
+   * @return
+   */
     public ExecutorService getExecutorService() {
         return executorService;
     }
@@ -135,6 +146,9 @@ public class LivepeerStream extends Thread {
         startStreamRetry();
     }
 
+    /**
+     * Function called to start trying to stream into Liveper forever.
+     */
     public synchronized void startStreamRetry() {
         while (true) {
             try {
@@ -209,6 +223,14 @@ public class LivepeerStream extends Thread {
                 return;
             }
         }
+    }
+
+    public byte[] getSegment(int mediaNum, String renditionName) {
+        LivepeerSegment segment = this.segments.get(mediaNum);
+        if (segment == null) {
+          return null;
+        }
+        return segment.getRendition(renditionName);
     }
 
     /**
@@ -715,7 +737,7 @@ public class LivepeerStream extends Thread {
      */
     public void newSegment(MediaSegmentModel mediaSegment) {
         LivepeerSegment livepeerSegment = new LivepeerSegment(mediaSegment, this);
-        segments.add(livepeerSegment);
+        segments.put(livepeerSegment.getSequenceNumber(), livepeerSegment);
         livepeerSegment.uploadSegment();
     }
 

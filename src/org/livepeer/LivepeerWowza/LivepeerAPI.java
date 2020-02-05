@@ -261,13 +261,18 @@ public class LivepeerAPI {
     this.livepeerStreams.remove(livepeerStream.getStreamId());
   }
 
+  /**
+   * Given a request for a segment from the Livepeer API, return the multipart-cached version if we have it
+   * @param url URL of the segment to request
+   * @return
+   */
   public byte[] getCachedSegment(String url) {
+    logger.info("canonical-log-line function=getCachedSegment phase=start url="+url);
     String pattern = "^/stream/([0-9a-f-]+)/(.*)/([0-9]+).ts$";
     URL parsedUrl;
     try {
       parsedUrl = new URL(url);
     } catch (MalformedURLException e) {
-      System.out.println("MATCH foo");
       return null;
     }
 
@@ -275,7 +280,6 @@ public class LivepeerAPI {
     Matcher m = r.matcher(parsedUrl.getPath());
 
     if (!m.find()) {
-      System.out.println("NO MATCH");
       return null;
     }
 
@@ -283,6 +287,17 @@ public class LivepeerAPI {
     String renditionName = m.group(2);
     int sequenceNumber = Integer.parseInt(m.group(3));
 
-    return null;
+    LivepeerStream livepeerStream = LivepeerStream.getFromId(id);
+    if (livepeerStream == null) {
+      return null;
+    }
+
+    byte[] ret = livepeerStream.getSegment(sequenceNumber, renditionName);
+    if (ret == null) {
+      return null;
+    }
+
+    logger.info("canonical-log-line function=getCachedSegment phase=success url="+url);
+    return ret;
   }
 }
