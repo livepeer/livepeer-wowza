@@ -3,7 +3,7 @@ RUN apt-get update && apt-get install -y openjdk-8-jdk-headless curl
 # Ubuntu ships Ant with a Java 11 dependency, so we grab it manually.
 WORKDIR /ant
 ENV PATH $PATH:/ant/apache-ant-1.10.6/bin
-RUN curl -o ant.tar.gz https://apache.org/dist/ant/binaries/apache-ant-1.10.6-bin.tar.gz && tar xzf ant.tar.gz
+RUN curl -o ant.tar.gz https://archive.apache.org/dist/ant/binaries/apache-ant-1.10.6-bin.tar.gz && tar xzf ant.tar.gz
 WORKDIR /build/wowza
 RUN mkdir /build/bin
 ADD build.xml build.xml
