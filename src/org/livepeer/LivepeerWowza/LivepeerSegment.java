@@ -164,6 +164,7 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
           if (renditionName == null) {
             renditionName = profiles.get(i).getName();
             logger.info("Couldn't find " + MIME_HEADER_RENDITION_NAME + ", falling back to positional profile: " + renditionName);
+            logger.info("All headers: " + headersStr);
           }
 
           // Dump rendition into a byte[]
