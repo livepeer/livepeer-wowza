@@ -11,6 +11,7 @@
   },
   "scripts": {
     "e2e-test": "docker build --target tester -t wowza-tester .; docker run wowza-tester | tee e2e-test.log",
-    "release": "standard-version -t ''"
+    "release": "standard-version -t ''",
+    "dev": "docker build -t livepeerci/livepeer-wowza:death-to-hls-pull --target server . && docker run --rm -it --name livepeer-wowza -p 1935:1935 -p 8087:8087 -p 8088:8088 -v /Users/iameli:/Users/iameli -e WSE_LIC=$WSE_LIC livepeerci/livepeer-wowza:death-to-hls-pull /sbin/entrypoint.sh"
   }
 }

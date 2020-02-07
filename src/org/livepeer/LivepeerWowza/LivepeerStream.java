@@ -43,7 +43,7 @@ import java.util.concurrent.*;
  * <p>
  * Upon the stream ending, it cleans up all of those things.
  */
-public class LivepeerStream extends Thread {
+public class LivepeerStream {
     /**
      * Class for tracking the IMediaStream and MediaCodecInfoVideo of all of our streamFiles
      */
@@ -67,7 +67,7 @@ public class LivepeerStream extends Thread {
 
     public final static String LIVEPEER_SUFFIX = "_livepeer";
     public final static int SMIL_CHECK_INTERVAL = 3000;
-    public final static int START_STREAM_RETRY_INTERVAL = 3000;
+    public final static long START_STREAM_RETRY_INTERVAL = 3000;
     public final static int HLS_BUFFER_SIZE = 5;
 
     private static ConcurrentHashMap<String, LivepeerStream> livepeerStreams = new ConcurrentHashMap<>();
@@ -88,7 +88,7 @@ public class LivepeerStream extends Thread {
     private Set<String> activeStreamFiles = new HashSet<>();
     private Map<String, StreamFileInfo> streamFileInfos = new HashMap<>();
     private Map<String, Publisher> duplicateStreamPublishers = new HashMap<String, Publisher>();
-    private ExecutorService executorService = Executors.newFixedThreadPool(10);
+    private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(10);
     private boolean shouldDuplicateStreams;
     // Best concurrent-with-sorted-keys map I could find
     private Map<Integer, LivepeerSegment> segments = new ConcurrentSkipListMap<>();
@@ -123,7 +123,7 @@ public class LivepeerStream extends Thread {
    * Get ExecutorService used for thread pool
    * @return
    */
-    public ExecutorService getExecutorService() {
+    public ScheduledExecutorService getExecutorService() {
         return executorService;
     }
 
@@ -142,25 +142,32 @@ public class LivepeerStream extends Thread {
         this.shouldDuplicateStreams = this.livepeer.getProps().getDuplicateStreams();
     }
 
-    @Override
-    public void run() {
-        startStreamRetry();
+    /**
+     * External signal that we should start streaming
+     */
+    public synchronized void startStreamRetry() {
+        executorService.execute(() -> {
+            this._startStreamRetry();
+        });
     }
 
     /**
      * Function called to start trying to stream into Liveper forever.
      */
-    public synchronized void startStreamRetry() {
-        while (true) {
-            try {
-                startStream();
-                break;
-            } catch (Exception e) {
-                logger.info("LivepeerStream crashed during startStream(), retrying in " + START_STREAM_RETRY_INTERVAL + "ms.");
-                logger.error(e);
-                e.printStackTrace();
-                this.fatalWait(START_STREAM_RETRY_INTERVAL);
-            }
+    private synchronized void _startStreamRetry() {
+        // Note: this check might be unnecessary, but I'm being extra-cautious regarding relying on
+        // ScheduledExecutorService's shutdown behavior. Just in case jobs didn't all get insta-terminated
+        // in stopStream, we include checks for async actions to do nothing if we're shutting down.
+        if (isShuttingDown) {
+            return;
+        }
+        try {
+            startStream();
+        } catch (Exception e) {
+            logger.info("LivepeerStream crashed during startStream(), retrying in " + START_STREAM_RETRY_INTERVAL + "ms.");
+            logger.error(e);
+            e.printStackTrace();
+            this.getExecutorService().schedule(this::_startStreamRetry, START_STREAM_RETRY_INTERVAL, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -176,13 +183,17 @@ public class LivepeerStream extends Thread {
         applicationName = appInstance.getApplication().getName();
 
         // Create /api/stream
-        livepeerStream = this.createStreamRetry();
+        if (this.livepeerStream == null) {
+            livepeerStream = this.createStream();
+        }
         this.id = livepeerStream.getId();
         LivepeerStream.livepeerStreams.put(this.id, this);
         logger.info("created livepeerStreamId=" + livepeerStream.getId());
 
         // Pick broadcaster from the list at /api/broadcaster
-        broadcaster = this.pickBroadcasterRetry();
+        if (this.broadcaster == null) {
+            this.pickBroadcaster();
+        }
 
         // Start HLS pushing
         hlsPush = new PushPublishHTTPCupertinoLivepeerHandler(appInstance, this);
@@ -200,30 +211,6 @@ public class LivepeerStream extends Thread {
         this.startDuplicateStreams();
 
         logger.info(streamName + "canonical-log-line function=startStream phase=end");
-
-        // "Main Loop". Do nothing until there is a problem, then select a new broadcaster.
-        while (true) {
-            try {
-                logger.info("LivepeerStream " + this.id + " before wait ");
-                this.wait();
-                logger.info("LivepeerStream " + this.id + " woke up!");
-                if (isShuttingDown) {
-                    // It's to shut down the stream. Cool.
-                    isShuttingDown = true;
-                    this.stopStream();
-                    return;
-                } else if (isAcquiringBroadcaster) {
-                    // It's to get a new broadcaster. Cool.
-                    broadcaster = this.pickBroadcasterRetry();
-                    isAcquiringBroadcaster = false;
-                }
-            } catch (InterruptedException e) {
-                logger.error("InterruptedException in main LivepeerStream");
-                // Somebody woke us up. Why?
-                this.stopStream();
-                return;
-            }
-        }
     }
 
     public byte[] getSegment(int mediaNum, String renditionName) {
@@ -237,38 +224,48 @@ public class LivepeerStream extends Thread {
     /**
      * Try to create a stream forever
      */
-    private LivepeerAPIResourceStream createStreamRetry() {
-        while (true) {
-            try {
-                LivepeerAPIResourceStream livepeerStream = livepeer.createStreamFromApplication(vHostName, applicationName, streamName, codecInfoVideo);
-                logger.info("LIVEPEER: created stream " + livepeerStream.getId());
-                return livepeerStream;
-            } catch (Exception e) {
-                logger.error("LivepeerStream crashed during createStreamRetry(), retrying in " + START_STREAM_RETRY_INTERVAL + "ms.");
-                logger.error(e);
-                this.fatalWait(START_STREAM_RETRY_INTERVAL);
-            }
+    private LivepeerAPIResourceStream createStream() throws IOException {
+        return livepeer.createStreamFromApplication(vHostName, applicationName, streamName, codecInfoVideo);
+    }
+
+    /**
+     * Try to select a random broadcaster from the API server
+     */
+    private void pickBroadcaster() throws IOException {
+        LivepeerAPIResourceBroadcaster broadcaster = livepeer.getRandomBroadcaster();
+        if (broadcaster != null) {
+            this.broadcaster = broadcaster;
+        } else {
+            throw new RuntimeException("no broadcasters found");
         }
     }
 
     /**
-     * Try to select a random broadcaster from the server forever
+     * Keep trying to pick a broadcaster forever
      */
-    private LivepeerAPIResourceBroadcaster pickBroadcasterRetry() {
-        while (true) {
-            try {
-                LivepeerAPIResourceBroadcaster broadcaster = livepeer.getRandomBroadcaster();
-                if (broadcaster != null) {
-                    logger.info("LIVEPEER: picked broadcaster " + broadcaster.getAddress());
-                    return broadcaster;
-                } else {
-                    logger.info("LIVEPEER: no broadcasters found");
-                }
-            } catch (Exception e) {
-                logger.info("LivepeerStream errored during getRandomBroadcaster(), retrying in " + START_STREAM_RETRY_INTERVAL + "ms.");
-                logger.error(e);
-            }
-            this.fatalWait(START_STREAM_RETRY_INTERVAL);
+    private void pickBroadcasterRetry() {
+        // If we already have a thread picking a new broadcaster, don't schedule another one
+        if (this.isAcquiringBroadcaster) {
+            return;
+        }
+        this.isAcquiringBroadcaster = true;
+        this.getExecutorService().execute(this::_pickBroadcasterRetry);
+    }
+
+    /**
+     * Async retry loop for pickBroadcasterRetry()
+     */
+    private void _pickBroadcasterRetry() {
+        if (isShuttingDown) {
+            return;
+        }
+        try {
+            this.pickBroadcaster();
+            this.isAcquiringBroadcaster = false;
+        }
+        catch (Exception e) {
+            logger.error(streamName + "canonical-log-line function=pickBroadcasterRetry phase=error err=" + e.getMessage());
+            this.getExecutorService().schedule(this::_pickBroadcasterRetry, START_STREAM_RETRY_INTERVAL, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -277,39 +274,28 @@ public class LivepeerStream extends Thread {
     }
 
     /**
-     * Helper function for cases where the thread is sleeping and an interrupt means we should just self-destruct
-     */
-    private void fatalWait(long ms) {
-        try {
-            this.wait(ms);
-        } catch (InterruptedException e) {
-            this.stopStream();
-        }
-    }
-
-    /**
      * Notify the LivepeerStream thread that there's a problem with a broadcaster and we should try and find a new one.
      *
      * @param problematicBroadcaster problematic broadcaster
      */
     public synchronized void notifyBroadcasterProblem(LivepeerAPIResourceBroadcaster problematicBroadcaster) {
+        if (isShuttingDown) {
+            // We're on our way out. Nothing to do.
+            return;
+        }
         if (this.broadcaster != problematicBroadcaster) {
             // We already replaced them; we're good to go.
             return;
         }
-        if (isAcquiringBroadcaster || isShuttingDown) {
-            // We're either on our way out or already working to get a broadcaster. Either way, nothing to do.
-            return;
-        }
-        // Okay, let the thread know it needs to find a new B.
-        isAcquiringBroadcaster = true;
-        this.notify();
+        // Okay, let the stream know it needs to find a new B.
+        this.pickBroadcasterRetry();
     }
 
     /**
      * This stream has ended. Clean up everything that needs cleaning up.
      */
     public synchronized void stopStream() {
+        this.isShuttingDown = true;
         // Disconnect HLS push
         hlsPush.disconnect();
         this.stopStreamFiles();
@@ -320,15 +306,11 @@ public class LivepeerStream extends Thread {
         // This flag being false implies this was an external call and we need to shut down the thread.
         executorService.shutdown();
         try {
-            if (!executorService.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+            if (!executorService.awaitTermination(1000, TimeUnit.MILLISECONDS)) {
                 executorService.shutdownNow();
             }
         } catch (InterruptedException e) {
             executorService.shutdownNow();
-        }
-        if (!isShuttingDown) {
-            isShuttingDown = true;
-            this.notify();
         }
     }
 
@@ -549,7 +531,7 @@ public class LivepeerStream extends Thread {
         for (String renditionName : livepeerStream.getRenditions().keySet()) {
             streamFilesMustExist.put(renditionName, livepeer.getLivepeerHost() + livepeerStream.getRenditions().get(renditionName));
         }
-        logger.info("LIVEPEER ensuring these renditions exist: " + streamFilesMustExist);
+        logger.debug("LIVEPEER ensuring these renditions exist: " + streamFilesMustExist);
         this.activeStreamFiles = streamFilesMustExist.keySet();
         for (ShortObject streamFileListItem : streamFiles.getStreamFiles()) {
             String id = streamFileListItem.getId();
@@ -558,16 +540,16 @@ public class LivepeerStream extends Thread {
             String streamFileName = streamFile.getStreamfileName();
             if (streamFilesMustExist.containsKey(streamFileName)) {
                 if (streamFilesMustExist.get(streamFile.getStreamfileName()) == streamFile.getUri()) {
-                    logger.info("LIVEPEER found good existing streamFile: " + streamFile.getStreamfileName());
+                    logger.debug("LIVEPEER found good existing streamFile: " + streamFile.getStreamfileName());
                     streamFilesMustExist.remove(streamFileName);
                 } else {
-                    logger.info("LIVEPEER found stale streamFile, deleting: " + streamFile.getStreamfileName());
+                    logger.debug("LIVEPEER found stale streamFile, deleting: " + streamFile.getStreamfileName());
                     streamFile.deleteObject();
                 }
             }
 
         }
-        logger.info("LIVEPEER creating stream files for renditions: " + streamFilesMustExist);
+        logger.debug("LIVEPEER creating stream files for renditions: " + streamFilesMustExist);
         for (String renditionName : streamFilesMustExist.keySet()) {
             // Create the streamfile
             StreamFileAppConfig streamFile = new StreamFileAppConfig();
@@ -584,7 +566,7 @@ public class LivepeerStream extends Thread {
                 e.printStackTrace();
                 throw new RuntimeException(e);
             }
-            logger.info("LIVEPEER created streamFile foo " + renditionName);
+            logger.debug("LIVEPEER created streamFile foo " + renditionName);
 
             StreamFileAppConfigAdv streamFileAdv = new StreamFileAppConfigAdv(vHostName, applicationName, renditionName);
             streamFileAdv.loadObject();

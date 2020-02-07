@@ -51,7 +51,7 @@ public class ModuleLivepeerWowza extends ModuleBase {
 			// Otherwise, if it's a source itself, this means we can actually start sending video!
 			else if (livepeerStream != null) {
 				livepeerStream.setCodecInfoVideo(codecInfoVideo);
-				livepeerStream.start();
+				livepeerStream.startStreamRetry();
 			}
 		}
 

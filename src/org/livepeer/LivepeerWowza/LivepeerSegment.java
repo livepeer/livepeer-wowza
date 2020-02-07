@@ -117,7 +117,7 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
     attempt += 1;
 
     livepeerStream.getExecutorService().execute(() -> {
-      logger.error("canonical-log-line function=uploadSegment id=" + id + " phase=start uri=" + segmentUri);
+      logger.info("canonical-log-line function=uploadSegment id=" + id + " phase=start uri=" + segmentUri);
       try {
 
         // Initialize PUT request
