@@ -243,7 +243,7 @@
 			</Property>
 			<Property>
 				<Name>livepeer.org/api-server-url</Name>
-				<Value>http://172.19.131.109:3004/api</Value>
+				<Value>https://livepeer.live/api</Value>
 				<Type>String</Type>
 			</Property>
 			<Property>
