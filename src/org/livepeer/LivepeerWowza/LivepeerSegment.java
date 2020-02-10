@@ -7,6 +7,7 @@ import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.manifest.model.m3u8.MediaSegmentModel;
 import org.apache.commons.fileupload.FileUploadBase;
 import org.apache.commons.fileupload.MultipartStream;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -183,8 +184,8 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
         livepeerStream.pruneSegments();
         logger.info("canonical-log-line function=uploadSegment worker=true phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (duration / (double) 1000) + " resolution=" + resolution + " responseSize=REDACTED");
       } catch (Exception e) {
-        e.printStackTrace();
-        logger.error("canonical-log-line function=uploadSegment worker=true phase=error uri=" + segmentUri + " error=" + e);
+        String stackTrace = ExceptionUtils.getStackTrace(e).replaceAll("\\n", "");
+        logger.error("canonical-log-line function=uploadSegment worker=true phase=error uri=" + segmentUri + " error=" + e + " stack="+stackTrace);
         livepeerStream.notifyBroadcasterProblem(livepeerBroadcaster);
         this.uploadSegment();
       }
