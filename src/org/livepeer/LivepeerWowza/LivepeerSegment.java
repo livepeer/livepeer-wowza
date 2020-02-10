@@ -144,13 +144,18 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
         int status = res.getStatusLine().getStatusCode();
         logger.info("canonical-log-line function=uploadSegment id=" + id + " phase=uploaded responseLength=" + " elapsed=" + elapsed + " url=" + url + " status=" + status + " resolution=" + resolution + " size=" + data.length);
         ContentType contentType = ContentType.get(responseEntity);
+
+        // Fail if we didn't get a 200 response
         if (status != 200) {
-          String err = "unknown error";
+          String err = "status=" + status;
+          // If go-livepeer gave us an error, include that in the error message
           if (contentType.getMimeType().equals("text/plain")) {
             err = EntityUtils.toString(responseEntity).replaceAll("\\n", " ");
           }
           throw new RuntimeException(err);
         }
+
+        // Fail if we don't have the content-type stuff we need
         String boundaryText = contentType.getParameter("boundary");
         if (boundaryText == null) {
           throw new RuntimeException("no boundaryText found; contentType=" + contentType.toString());
