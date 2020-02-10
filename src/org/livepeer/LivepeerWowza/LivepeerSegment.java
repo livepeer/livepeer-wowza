@@ -147,7 +147,7 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
         if (status != 200) {
           String err = "unknown error";
           if (contentType.getMimeType().equals("text/plain")) {
-            err = EntityUtils.toString(responseEntity);
+            err = EntityUtils.toString(responseEntity).replaceAll("\\n", " ");
           }
           throw new RuntimeException(err);
         }
