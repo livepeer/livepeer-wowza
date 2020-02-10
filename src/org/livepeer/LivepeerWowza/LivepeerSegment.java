@@ -117,7 +117,7 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
     attempt += 1;
 
     livepeerStream.getExecutorService().execute(() -> {
-      logger.info("canonical-log-line function=uploadSegment id=" + id + " phase=start uri=" + segmentUri);
+      logger.info("canonical-log-line function=uploadSegment id=" + id + " phase=start worker=true uri=" + segmentUri);
       try {
 
         // Initialize PUT request
@@ -181,10 +181,10 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
         elapsed = (System.currentTimeMillis() - start) / (double) 1000;
         this.ready = true;
         livepeerStream.pruneSegments();
-        logger.info("canonical-log-line function=uploadSegment phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (duration / (double) 1000) + " resolution=" + resolution + " responseSize=REDACTED");
+        logger.info("canonical-log-line function=uploadSegment worker=true phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (duration / (double) 1000) + " resolution=" + resolution + " responseSize=REDACTED");
       } catch (Exception e) {
         e.printStackTrace();
-        logger.error("canonical-log-line function=uploadSegment phase=error uri=" + segmentUri + " error=" + e);
+        logger.error("canonical-log-line function=uploadSegment worker=true phase=error uri=" + segmentUri + " error=" + e);
         livepeerStream.notifyBroadcasterProblem(livepeerBroadcaster);
         this.uploadSegment();
       }

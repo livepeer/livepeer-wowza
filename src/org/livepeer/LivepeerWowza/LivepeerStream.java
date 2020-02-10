@@ -146,9 +146,9 @@ public class LivepeerStream {
      * External signal that we should start streaming
      */
     public synchronized void startStreamRetry() {
-        executorService.execute(() -> {
-            this._startStreamRetry();
-        });
+        logger.info("canonical-log-line function=startStreamRetry worker=true phase=start");
+        this._startStreamRetry();
+        logger.info("canonical-log-line function=startStreamRetry worker=true phase=end");
     }
 
     /**
@@ -256,15 +256,17 @@ public class LivepeerStream {
      * Async retry loop for pickBroadcasterRetry()
      */
     private void _pickBroadcasterRetry() {
+        logger.info("canonical-log-line function=pickBroadcasterRetry() worker=true phase=start");
         if (isShuttingDown) {
             return;
         }
         try {
             this.pickBroadcaster();
             this.isAcquiringBroadcaster = false;
+            logger.info("canonical-log-line function=pickBroadcasterRetry() worker=true phase=end");
         }
         catch (Exception e) {
-            logger.error(streamName + "canonical-log-line function=pickBroadcasterRetry phase=error err=" + e.getMessage());
+            logger.error(streamName + "canonical-log-line function=pickBroadcasterRetry worker=true phase=error err=" + e.getMessage());
             this.getExecutorService().schedule(this::_pickBroadcasterRetry, START_STREAM_RETRY_INTERVAL, TimeUnit.MILLISECONDS);
         }
     }
