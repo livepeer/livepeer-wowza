@@ -182,10 +182,10 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
         elapsed = (System.currentTimeMillis() - start) / (double) 1000;
         this.ready = true;
         livepeerStream.pruneSegments();
-        logger.info("canonical-log-line function=uploadSegment worker=true phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (duration / (double) 1000) + " resolution=" + resolution + " responseSize=REDACTED");
+        logger.info("canonical-log-line function=uploadSegment id=" + id + " worker=true phase=end elapsed=" + elapsed + " url=" + url + " status=" + status + " duration=" + (duration / (double) 1000) + " resolution=" + resolution + " responseSize=REDACTED");
       } catch (Exception e) {
         String stackTrace = ExceptionUtils.getStackTrace(e).replaceAll("\\n", "");
-        logger.error("canonical-log-line function=uploadSegment worker=true phase=error uri=" + segmentUri + " error=" + e + " stack="+stackTrace);
+        logger.error("canonical-log-line function=uploadSegment worker=true phase=error id=" + id + " uri=" + segmentUri + " error=" + e + " stack="+stackTrace);
         livepeerStream.notifyBroadcasterProblem(livepeerBroadcaster);
         this.uploadSegment();
       }
