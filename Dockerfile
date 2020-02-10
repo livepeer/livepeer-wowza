@@ -53,6 +53,7 @@ ADD etc/Application.xml /usr/local/WowzaStreamingEngine/conf/live/Application.xm
 ADD etc/lp_transcode.xml /usr/local/WowzaStreamingEngine/transcoder/templates/lp_transcode.xml
 ADD etc/camcast_transcode.xml /usr/local/WowzaStreamingEngine/transcoder/templates/camcast.xml
 ADD etc/camcast.stream /usr/local/WowzaStreamingEngine/content/camcast.stream
+ADD etc/print-threads.sh /usr/local/bin/print-threads.sh
 COPY --from=builder /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar
 RUN chown wowza:wowza /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar && chmod 775 /usr/local/WowzaStreamingEngine/lib/LivepeerWowza.jar
 
