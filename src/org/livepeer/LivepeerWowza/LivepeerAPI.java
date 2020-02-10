@@ -218,7 +218,7 @@ public class LivepeerAPI {
     }
     HttpResponse response = _get("/broadcaster");
     TypeReference typeRef = new TypeReference<List<LivepeerAPIResourceBroadcaster>>() {};
-    List<LivepeerAPIResourceBroadcaster> list = mapper.readValue(response.getEntity().getContent(), typeRef);
+    List<LivepeerAPIResourceBroadcaster> list = (List<LivepeerAPIResourceBroadcaster>) mapper.readValue(response.getEntity().getContent(), typeRef);
     return list;
   }
 

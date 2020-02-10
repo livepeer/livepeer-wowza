@@ -7,7 +7,7 @@ set -e
 JAVA_HOME=${1-text}
 [ $# -eq 0 ] && { echo "Usage: sudo $0 \$(/usr/libexec/java_home -v '1.8*')" ; exit 1; }
 
-KEYSTORE=$JAVA_HOME/jre/lib/security/cacerts
+KEYSTORE=$JAVA_HOME/lib/security/cacerts
 
 curl -O https://letsencrypt.org/certs/isrgrootx1.der
 curl -O https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.der
