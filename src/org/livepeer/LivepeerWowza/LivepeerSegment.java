@@ -144,6 +144,13 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
         int status = res.getStatusLine().getStatusCode();
         logger.info("canonical-log-line function=uploadSegment id=" + id + " phase=uploaded responseLength=" + " elapsed=" + elapsed + " url=" + url + " status=" + status + " resolution=" + resolution + " size=" + data.length);
         ContentType contentType = ContentType.get(responseEntity);
+        if (status != 200) {
+          String err = "unknown error";
+          if (contentType.getMimeType().equals("text/plain")) {
+            err = EntityUtils.toString(responseEntity);
+          }
+          throw new RuntimeException(err);
+        }
         String boundaryText = contentType.getParameter("boundary");
         if (boundaryText == null) {
           throw new RuntimeException("no boundaryText found; contentType=" + contentType.toString());
