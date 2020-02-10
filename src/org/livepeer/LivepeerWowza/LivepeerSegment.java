@@ -138,10 +138,16 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
         // Upload complete; initialize multipart parsing
         double elapsed = (System.currentTimeMillis() - start) / (double) 1000;
         HttpEntity responseEntity = res.getEntity();
+        if (responseEntity == null) {
+          throw new RuntimeException("responseEntity is null");
+        }
         int status = res.getStatusLine().getStatusCode();
         logger.info("canonical-log-line function=uploadSegment id=" + id + " phase=uploaded responseLength=" + " elapsed=" + elapsed + " url=" + url + " status=" + status + " resolution=" + resolution + " size=" + data.length);
         ContentType contentType = ContentType.get(responseEntity);
         String boundaryText = contentType.getParameter("boundary");
+        if (boundaryText == null) {
+          throw new RuntimeException("no boundaryText found; contentType=" + contentType.toString());
+        }
         MultipartStream multipartStream = new MultipartStream(
                 responseEntity.getContent(),
                 boundaryText.getBytes());
