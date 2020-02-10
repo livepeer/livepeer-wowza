@@ -50,6 +50,7 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
   private RequestConfig requestConfig;
   private Map<String, byte[]> buffers = new ConcurrentHashMap<String, byte[]>();
   private boolean ready = false;
+  private boolean gaveUp = false;
 
   public LivepeerSegment(MediaSegmentModel mediaSegment, LivepeerStream livepeerStream) {
     this.mediaSegment = mediaSegment;
@@ -113,6 +114,8 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
     String id = livepeerStream.getLivepeerId();
     if (attempt >= UPLOAD_RETRIES) {
       logger.error("canonical-log-line function=uploadSegment id=" + id + " phase=giveup uri=" + segmentUri);
+      this.gaveUp = true;
+      livepeerStream.pruneSegments();
       return;
     }
     attempt += 1;
@@ -234,6 +237,10 @@ public class LivepeerSegment implements Comparable<LivepeerSegment> {
 
   public boolean isReady() {
       return this.ready;
+  }
+
+  public boolean isGaveUp() {
+    return this.gaveUp;
   }
 
   @Override

@@ -787,8 +787,10 @@ public class LivepeerStream {
     public void pruneSegments() {
         int earliest = -1;
         int latest = -1;
+        Collection<LivepeerSegment> values = segments.values();
+        logger.info("canonical-log-line function=pruneSegments id=" + getLivepeerId() + " phase=start segments=" + values.size());
         for (LivepeerSegment segment : segments.values()) {
-            if (!segment.isReady()) {
+            if (!segment.isReady() && !segment.isGaveUp()) {
                 break;
             }
             if (earliest == -1) {
@@ -803,6 +805,7 @@ public class LivepeerStream {
         if (latest - earliest > HLS_BUFFER_SIZE) {
             int cutoff = latest - HLS_BUFFER_SIZE;
             for (int i = earliest; i < cutoff; i += 1) {
+                logger.info("canonical-log-line function=pruneSegments id=" + getLivepeerId() + " phase=prune pruning=" + i);
                 segments.remove(i);
             }
         }
