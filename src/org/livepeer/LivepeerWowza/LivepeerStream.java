@@ -577,9 +577,9 @@ public class LivepeerStream {
             s.setValue("50");
             s = streamFileAdv.getAdvSetting("CupertinoHLS", "cupertinoManifestBufferBlockCount");
             s.setEnabled(true);
-            s.setValue("4");
+            s.setValue("5");
             s = streamFileAdv.getAdvSetting("CupertinoHLS", "cupertinoAutoSegmentBuffer");
-            s.setEnabled(true);
+            s.setEnabled(false);
             s.setValue("false");
             try {
                 streamFileAdv.saveObject();
