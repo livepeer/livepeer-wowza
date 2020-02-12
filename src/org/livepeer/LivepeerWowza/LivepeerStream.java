@@ -469,6 +469,7 @@ public class LivepeerStream {
             if (thisMapGroup == null) {
                 thisMapGroup = new MediaStreamMapGroup();
                 thisMapGroup.setName(streamGroupName);
+                thisMapGroup.setTranscodeResult(true);
                 streams.addNameGroup(thisMapGroup);
                 logger.info("LIVEPEER Created stream name group: " + streamGroupName);
             }
