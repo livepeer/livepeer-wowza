@@ -8,7 +8,7 @@
 
 	<target name="jar">
 		<mkdir dir="bin/classes"/>
-		<javac srcdir="src" destdir="bin/classes" debug="true" />
+		<javac target="1.8" source="1.8" srcdir="src" destdir="bin/classes" debug="true" />
 		<unzip dest="bin/classes">
 			<fileset dir="${vendor.lib.dir}">
 				<include name="**/*.jar"/>

@@ -43,6 +43,7 @@ RUN apt-get update && apt-get install -y ca-certificates
 COPY --from=installer /go/src/github.com/livepeer/livepeer-wowza/install_livepeer_wowza /install_livepeer_wowza
 RUN /install_livepeer_wowza -apikey abc123
 
+# For testing on Java 8/WSE 4.7.7: wowzamedia/wowza-streaming-engine-linux@sha256:904d95965cfdbec477a81374fcd22dfc48db1972e690dacb80d2114a8d597f95
 FROM wowzamedia/wowza-streaming-engine-linux@sha256:6613579af41950cd26593f582af285ab221b5a7119248b4314317c2c389e96a4 as server
 
 RUN apt-get update \
