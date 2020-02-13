@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="org.apache.james:apache-mime4j-dom:0.8.3" type="repository">
+    <properties maven-id="org.apache.james:apache-mime4j-dom:0.8.3" />
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/vendor/apache-mime4j-dom-0.8.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/vendor/apache-mime4j-core-0.8.3.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -739,5 +739,8 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="org.apache.james:apache-mime4j-core:0.8.3" level="project" />
+    <orderEntry type="library" name="org.apache.james:apache-mime4j-dom:0.8.3" level="project" />
+    <orderEntry type="library" name="commons-fileupload:commons-fileupload:1.4" level="project" />
   </component>
 </module>

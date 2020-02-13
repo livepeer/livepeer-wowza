@@ -1,18 +1,12 @@
 package org.livepeer.LivepeerWowza;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wowza.wms.application.IApplicationInstance;
-import com.wowza.wms.application.WMSProperties;
 import com.wowza.wms.logging.WMSLogger;
 import com.wowza.wms.media.model.MediaCodecInfoVideo;
-import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderAppConfig;
-import com.wowza.wms.rest.vhosts.applications.transcoder.TranscoderTemplateAppConfig;
-import com.wowza.wms.server.Server;
-import org.apache.http.Header;
+import com.wowza.wms.stream.IMediaStream;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -22,7 +16,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.config.SocketConfig;
-import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -31,9 +24,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContexts;
-import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -46,10 +37,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class LivepeerAPI {
 
   private static LivepeerAPI _instance;
+  private Map<String, LivepeerStream> livepeerStreams = new ConcurrentHashMap<String, LivepeerStream>();
+
   private IApplicationInstance appInstance;
   private static ConcurrentHashMap<IApplicationInstance, LivepeerAPI> apiInstances = new ConcurrentHashMap<>();
   private String livepeerApiUrl;
@@ -223,7 +218,7 @@ public class LivepeerAPI {
     }
     HttpResponse response = _get("/broadcaster");
     TypeReference typeRef = new TypeReference<List<LivepeerAPIResourceBroadcaster>>() {};
-    List<LivepeerAPIResourceBroadcaster> list = mapper.readValue(response.getEntity().getContent(), typeRef);
+    List<LivepeerAPIResourceBroadcaster> list = (List<LivepeerAPIResourceBroadcaster>) mapper.readValue(response.getEntity().getContent(), typeRef);
     return list;
   }
 
@@ -231,5 +226,117 @@ public class LivepeerAPI {
     Random rand = new Random();
     List<LivepeerAPIResourceBroadcaster> broadcasters = this.getBroadcasters();
     return broadcasters.get(rand.nextInt(broadcasters.size()));
+  }
+
+  public LivepeerStream getLivepeerStream(String id) {
+    return this.livepeerStreams.get(id);
+  }
+
+  /**
+   * Find the LivepeerStream that is handling this incoming transcoded rendition, if any
+   * @param streamName name of incoming stream
+   * @return LivepeerStream in charge of this rendition or null if not found
+   */
+  public LivepeerStream findStreamManager(String streamName) {
+    // Avoid an infinite loop - if this new stream is a transcoded rendition or one of our streamfiles,
+    // don't transcode again
+    if (streamName.endsWith(".stream")) {
+      streamName = streamName.substring(0, streamName.length() - 7);
+    }
+    for (LivepeerStream livepeerStream : livepeerStreams.values()) {
+      if (livepeerStream.managesStreamFile(streamName)) {
+        return livepeerStream;
+      }
+    }
+    return null;
+  }
+
+  public void addLivepeerStream(IMediaStream wowzaStream, String wowzaStreamName) {
+    LivepeerStream livepeerStream = new LivepeerStream(wowzaStream, wowzaStreamName, this);
+    this.livepeerStreams.put(wowzaStreamName, livepeerStream);
+  }
+
+  public void stopLivepeerStream(LivepeerStream livepeerStream) {
+    livepeerStream.stopStream();
+    this.livepeerStreams.remove(livepeerStream.getStreamId());
+  }
+
+  /**
+   * Given a request for a segment from the Livepeer API, return the multipart-cached version if we have it
+   * @param url URL of the segment to request
+   * @return
+   */
+  public byte[] getCachedSegment(String url) {
+    // logger.info("canonical-log-line function=getCachedSegment phase=start url="+url);
+    String pattern = "^/stream/([0-9a-f-]+)/(.*)/([0-9]+).ts$";
+    URL parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch (MalformedURLException e) {
+      return null;
+    }
+
+    Pattern r = Pattern.compile(pattern);
+    Matcher m = r.matcher(parsedUrl.getPath());
+
+    if (!m.find()) {
+      return null;
+    }
+
+    String id = m.group(1);
+    String renditionName = m.group(2);
+    int sequenceNumber = Integer.parseInt(m.group(3));
+
+    LivepeerStream livepeerStream = LivepeerStream.getFromId(id);
+    if (livepeerStream == null) {
+      return null;
+    }
+
+    byte[] ret = livepeerStream.getSegment(sequenceNumber, renditionName);
+    if (ret == null) {
+      return null;
+    }
+
+    // logger.info("canonical-log-line function=getCachedSegment phase=success url="+url);
+    return ret;
+  }
+
+  /**
+   * Given a request for a segment from the Livepeer API, return the multipart-cached version if we have it
+   * @param url URL of the segment to request
+   * @return
+   */
+  public String getManifest(String url) {
+    // logger.info("canonical-log-line function=getManifest phase=start url="+url);
+    String pattern = "^/stream/([0-9a-f-]+)/(.*).m3u8$";
+    URL parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch (MalformedURLException e) {
+      return null;
+    }
+
+    Pattern r = Pattern.compile(pattern);
+    Matcher m = r.matcher(parsedUrl.getPath());
+
+    if (!m.find()) {
+      return null;
+    }
+
+    String id = m.group(1);
+    String renditionName = m.group(2);
+
+    LivepeerStream livepeerStream = LivepeerStream.getFromId(id);
+    if (livepeerStream == null) {
+      return null;
+    }
+
+    String ret = livepeerStream.getManifest(renditionName);
+    if (ret == null) {
+      return null;
+    }
+
+    // logger.info("canonical-log-line function=getManifest phase=success url="+url);
+    return ret;
   }
 }
