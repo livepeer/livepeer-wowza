@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/livepeer/livepeer-wowza/compare/0.2.1...0.3.0) (2020-02-13)
+
+
+### Features
+
+* **wowza:** omg I'm downloading multipart data! ([8a28017](https://github.com/livepeer/livepeer-wowza/commit/8a2801768111d9b515a5e1d6a0167f9e90bac1e4))
+* **wowza:** successfully parsing multipart return into byte arrays ([8e26823](https://github.com/livepeer/livepeer-wowza/commit/8e26823637e1ad46889516a1fbc502c9a277e0d2))
+
+
+### Bug Fixes
+
+* **ci:** add missing ffmpeg4 ppa ([6e1fbe8](https://github.com/livepeer/livepeer-wowza/commit/6e1fbe8f552e837a04dbf8d34928929b82e03e75))
+
 ### [0.2.1](https://github.com/livepeer/livepeer-wowza/compare/0.2.0...0.2.1) (2019-12-02)
 
 
