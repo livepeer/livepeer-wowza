@@ -7,7 +7,7 @@
   "license": "MIT",
   "private": false,
   "dependencies": {
-    "standard-version": "^7.0.0"
+    "standard-version": "^8.0.1"
   },
   "scripts": {
     "e2e-test": "docker build --target tester -t wowza-tester .; docker run wowza-tester | tee e2e-test.log",
